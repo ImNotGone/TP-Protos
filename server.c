@@ -1,14 +1,14 @@
-#include <signal.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#include <netinet/in.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <sys/select.h>
-#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #define FALSE 0
 #define TRUE 1
@@ -21,180 +21,185 @@
 #define BUFFLEN 1024
 
 typedef struct client {
-    char buffer[BUFFLEN];
-    int client_socket;
-    size_t start_index;
-    size_t size;
+  char buffer[BUFFLEN];
+  int client_socket;
+  size_t start_index;
+  size_t size;
 } client_t;
 
 typedef struct sockaddr_in SAIN;
 typedef struct sockaddr SA;
 
 int main() {
-    // Cierro stdin
-    fclose(stdin);
+  // Cierro stdin
+  fclose(stdin);
 
-    // Armo el socket
-    int server_socket;
+  // Armo el socket
+  int server_socket;
 
-    // === Request a socket ===
-    if((server_socket = socket(AF_INET, SOCK_STREAM, TCP))< 0) {
-        perror("socket failed");
+  // === Request a socket ===
+  if ((server_socket = socket(AF_INET, SOCK_STREAM, TCP)) < 0) {
+    perror("socket failed");
+    exit(EXIT_FAILURE);
+  }
+
+  // === Set socket opt ===
+  int reuse = 1;
+  setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse,
+             sizeof(reuse));
+  // ...
+  // ...
+  // ...
+
+  SAIN server_addr;
+
+  server_addr.sin_family = AF_INET;
+  server_addr.sin_addr.s_addr = INADDR_ANY;
+  server_addr.sin_port = htons(PORT);
+
+  if (bind(server_socket, (SA *)&server_addr, sizeof(server_addr)) < 0) {
+    perror("bind failed");
+    exit(EXIT_FAILURE);
+  }
+
+  // QUEUED_CONNECTIONS -> cuantas conexiones puedo encolar (no atender, sino
+  // tener pendientes)
+  if (listen(server_socket, QUEUED_CONNECTIONS) < 0) {
+    perror("listen failed");
+    exit(EXIT_FAILURE);
+  }
+
+  puts("=== [SERVER STARTED] ===");
+  printf("[INFO] Listening on port %d\n", PORT);
+  printf("[INFO] Max queued connections is %d\n", QUEUED_CONNECTIONS);
+  printf("[INFO] Attending a maximum of %d clients\n", BACKLOG);
+
+  client_t clients[BACKLOG] = {0};
+  int found_space;
+
+  fd_set readfds;
+  fd_set writefds;
+  int sd;
+
+  char *auxbuffer;
+  int b_read;
+
+  while (TRUE) {
+    int ready_fds;
+    int maxfd;
+    // reset fd_sets
+    FD_ZERO(&readfds);
+    FD_ZERO(&writefds);
+
+    // add server_socket to read fd_set
+    maxfd = server_socket;
+    FD_SET(server_socket, &readfds);  // Podria no prenderlo si estoy lleno
+
+    // add client sockets to read and write fd_set
+    for (int i = 0; i < BACKLOG; i++) {
+      sd = clients[i].client_socket;
+
+      if (sd > 0) {
+        FD_SET(sd, &readfds);
+        FD_SET(sd, &writefds);
+      }
+
+      if (sd > maxfd) {
+        maxfd = sd;
+      }
+    }
+
+    ready_fds = select(maxfd + 1, &readfds, &writefds, NULL, NULL);
+
+    if ((ready_fds < 0) && (errno != EINTR)) {
+      puts("[ERROR] select error");
+      // continue;
+    }
+
+    // accept new connection
+    if (FD_ISSET(server_socket, &readfds)) {
+      SAIN client_addr;
+      socklen_t addr_len = sizeof(SAIN);
+      int client_socket =
+          accept(server_socket, (SA *)&client_addr, &(addr_len));
+
+      if (client_socket < 0) {
+        perror("accept error");
         exit(EXIT_FAILURE);
+      }
+
+      // LOG
+      printf("[NEW CONNECTION], socket_descriptor: %d, ip: %s, port: %d\n",
+             client_socket, inet_ntoa(client_addr.sin_addr),
+             ntohs(client_addr.sin_port));
+
+      // Find an empty client struct
+      found_space = FALSE;
+      int i;
+      for (i = 0; i < BACKLOG && !(found_space); i++) {
+        if (clients[i].client_socket == 0) {
+          clients[i].client_socket = client_socket;
+          printf("[INFO] added client at pos %d\n", i);
+          found_space = TRUE;
+        }
+      }
+
+      if (found_space == FALSE) {
+        close(client_socket);
+      }
+
+      // sprintf(clients[i].buffer, "Hi");
+      // size_t len = strlen(clients[i].buffer);
+      // if(send(clients[i].client_socket, clients[i].buffer, len, 0) != len) {
+      //  SEND ERROR
+      //    perror("send error");
+      //}
     }
 
-    // === Set socket opt ===
-    int reuse = 1;
-    setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse, sizeof(reuse));
-    // ...
-    // ...
-    // ...
-
-    SAIN server_addr;
-
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port = htons(PORT);
-
-    if(bind(server_socket, (SA*)&server_addr, sizeof(server_addr)) < 0) {
-        perror("bind failed");
-        exit(EXIT_FAILURE);
+    // read from client
+    for (int i = 0; i < BACKLOG; i++) {
+      sd = clients[i].client_socket;
+      auxbuffer = clients[i].buffer;
+      if (sd != 0 && FD_ISSET(sd, &readfds)) {
+        // if the connection is closing
+        SAIN client_addr;
+        socklen_t addr_len = sizeof(SAIN);
+        getpeername(sd, (SA *)&client_addr, &addr_len);
+        if ((b_read = read(sd, auxbuffer, BUFFLEN - 1)) == 0) {
+          // LOG
+          printf(
+              "[CLIENT DISCONECTED], socket_descriptor: %d, ip: %s, port: %d\n",
+              sd, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+          close(sd);
+          clients[i].client_socket = 0;
+        } else {
+          auxbuffer[b_read] = '\0';
+        }
+      }
     }
 
-    // QUEUED_CONNECTIONS -> cuantas conexiones puedo encolar (no atender, sino tener pendientes)
-    if(listen(server_socket, QUEUED_CONNECTIONS) < 0) {
-        perror("listen failed");
-        exit(EXIT_FAILURE);
+    // write to client
+    for (int i = 0; i < BACKLOG; i++) {
+      sd = clients[i].client_socket;
+      auxbuffer = clients[i].buffer;
+      int len = strlen(auxbuffer);
+      if (sd != 0 && len > 0 && FD_ISSET(sd, &writefds)) {
+        SAIN client_addr;
+        socklen_t addr_len = sizeof(SAIN);
+        getpeername(sd, (SA *)&client_addr, &addr_len);
+
+        printf("[ECHOING] msg:\"%s\", to ip: %s, port: %d\n", auxbuffer,
+               inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+        send(sd, auxbuffer, len, 0);
+        auxbuffer[0] = '\0';
+      }
     }
-
-    puts("=== [SERVER STARTED] ===");
-    printf("[INFO] Listening on port %d\n", PORT);
-    printf("[INFO] Max queued connections is %d\n", QUEUED_CONNECTIONS);
-    printf("[INFO] Attending a maximum of %d clients\n", BACKLOG);
-
-    client_t clients[BACKLOG] = {0};
-    int found_space;
-
-    fd_set readfds;
-    fd_set writefds;
-    int sd;
-
-    char * auxbuffer;
-    int b_read;
-
-    while (TRUE) {
-        int ready_fds;
-        int maxfd;
-        // reset fd_sets
-        FD_ZERO(&readfds);
-        FD_ZERO(&writefds);
-
-        // add server_socket to read fd_set
-        maxfd = server_socket;
-        FD_SET(server_socket, &readfds); // Podria no prenderlo si estoy lleno
-
-        // add client sockets to read and write fd_set
-        for (int i = 0; i < BACKLOG; i++) {
-            sd = clients[i].client_socket;
-
-            if(sd > 0) {
-                FD_SET(sd, &readfds);
-                FD_SET(sd, &writefds);
-            }
-
-            if(sd > maxfd) {
-                maxfd = sd;
-            }
-        }
-
-
-        ready_fds = select(maxfd + 1, &readfds, &writefds, NULL, NULL);
-
-        if((ready_fds < 0) && (errno != EINTR)) {
-            puts("[ERROR] select error");
-            // continue;
-        }
-
-        // accept new connection
-        if(FD_ISSET(server_socket, &readfds)) {
-
-            SAIN client_addr;
-            socklen_t addr_len = sizeof(SAIN);
-            int client_socket = accept(server_socket, (SA*)&client_addr, &(addr_len));
-
-            if(client_socket < 0) {
-                perror("accept error");
-                exit(EXIT_FAILURE);
-            }
-
-            // LOG
-            printf("[NEW CONNECTION], socket_descriptor: %d, ip: %s, port: %d\n", client_socket, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-
-            // Find an empty client struct
-            found_space = FALSE;
-            int i;
-            for(i = 0; i < BACKLOG && !(found_space); i++) {
-                if(clients[i].client_socket == 0) {
-                    clients[i].client_socket = client_socket;
-                    printf("[INFO] added client at pos %d\n", i);
-                    found_space = TRUE;
-                }
-            }
-
-            if(found_space == FALSE) {
-                close(client_socket);
-            }
-
-            //sprintf(clients[i].buffer, "Hi");
-            //size_t len = strlen(clients[i].buffer);
-            //if(send(clients[i].client_socket, clients[i].buffer, len, 0) != len) {
-                // SEND ERROR
-            //    perror("send error");
-            //}
-
-        }
-
-        // read from client
-        for (int i = 0; i < BACKLOG; i++) {
-            sd = clients[i].client_socket;
-            auxbuffer = clients[i].buffer;
-            if(sd != 0 && FD_ISSET(sd, &readfds)) {
-                // if the connection is closing
-                SAIN client_addr;
-                socklen_t addr_len = sizeof(SAIN);
-                getpeername(sd, (SA*)&client_addr, &addr_len);
-                if((b_read = read(sd, auxbuffer, BUFFLEN-1)) == 0) {
-                    // LOG
-                    printf("[CLIENT DISCONECTED], socket_descriptor: %d, ip: %s, port: %d\n", sd, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-                    close(sd);
-                    clients[i].client_socket = 0;
-                }
-                else {
-                    auxbuffer[b_read] = '\0';
-                }
-            }
-        }
-
-        // write to client
-        for(int i = 0; i < BACKLOG; i++) {
-            sd = clients[i].client_socket;
-            auxbuffer = clients[i].buffer;
-            int len = strlen(auxbuffer);
-            if(sd != 0 && len > 0 && FD_ISSET(sd, &writefds)) {
-                SAIN client_addr;
-                socklen_t addr_len = sizeof(SAIN);
-                getpeername(sd, (SA*)&client_addr, &addr_len);
-
-                printf("[ECHOING] msg:\"%s\", to ip: %s, port: %d\n", auxbuffer, inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-                send(sd, auxbuffer, len, 0);
-                auxbuffer[0] = '\0';
-            }
-        }
-    }
+  }
 }
 
 // TODO: hacer buffer circular
-// TODO: user send no bloqueante -> ver cuanto pude mandar y actualizar cuanto me falta mandar
+// TODO: user send no bloqueante -> ver cuanto pude mandar y actualizar cuanto
+// me falta mandar
 // TODO: si mi array esta lleno -> no leer mas
 // TODO: usar threads para los getaddrinfo en udp
 

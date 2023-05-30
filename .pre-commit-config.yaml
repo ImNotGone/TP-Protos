@@ -1,0 +1,23 @@
+repos:
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev : 04a088444c7fc019c9f9c4cea4420b67e3f3dac3
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [build,
+               chore, 
+               ci,
+               docs, 
+               style,
+               refactor,
+               perf,
+               test,
+               change, 
+               remove] # optional: list of Conventional Commits types to allow e.g. [feat, fix, ci, chore, test]
+
+  - repo: https://github.com/pocc/pre-commit-hooks
+    rev: 336fdd7c3cab698ead0b1c95157b9e74d3906b62
+    hooks:
+      - id: clang-format
+        args: [--style=Google]
+      - id: clang-tidy

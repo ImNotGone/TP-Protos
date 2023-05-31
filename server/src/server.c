@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <server.h>
 
 #define FALSE 0
 #define TRUE 1

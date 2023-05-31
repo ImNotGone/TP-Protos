@@ -60,17 +60,13 @@ int main() {
   }
 
   if((setsockopt(server_socket_ipv6, SOL_SOCKET, SO_REUSEADDR,
-             (const char *)&reuse, sizeof(reuse)))<0){
+             (const char *)&reuse, sizeof(reuse)))<0 ||
+     (setsockopt(server_socket_ipv6, SOL_IPV6, IPV6_V6ONLY,
+             (const char *)&reuse, sizeof(reuse)))<0
+    ){
     perror("ipv6 setsockopt error");
     exit(EXIT_FAILURE);
   }
-
-  if((setsockopt(server_socket_ipv6, SOL_IPV6, IPV6_V6ONLY,
-             (const char *)&reuse, sizeof(reuse)))<0){
-    perror("ipv6 setsockopt error");
-    exit(EXIT_FAILURE);
-  }
-
 
   SAIN server_addr;
   SAIN6 server_addr_ipv6;

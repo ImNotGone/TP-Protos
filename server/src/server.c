@@ -59,15 +59,17 @@ int main() {
       exit(EXIT_FAILURE);
   }
 
-    if((setsockopt(server_socket_ipv6, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse,
-                   sizeof(reuse)))<0){
-        perror("ipv6 setsockopt error");
-        exit(EXIT_FAILURE);
-    }
-  // ...
-  // ...
-  // ...
+  if((setsockopt(server_socket_ipv6, SOL_SOCKET, SO_REUSEADDR,
+             (const char *)&reuse, sizeof(reuse)))<0){
+    perror("ipv6 setsockopt error");
+    exit(EXIT_FAILURE);
+  }
 
+  if((setsockopt(server_socket_ipv6, SOL_IPV6, IPV6_V6ONLY,
+             (const char *)&reuse, sizeof(reuse)))<0){
+    perror("ipv6 setsockopt error");
+    exit(EXIT_FAILURE);
+  }
 
 
   SAIN server_addr;
@@ -125,8 +127,9 @@ int main() {
     FD_ZERO(&writefds);
 
     // add server_socket to read fd_set
-    maxfd = server_socket;
     FD_SET(server_socket, &readfds);  // Podria no prenderlo si estoy lleno
+    FD_SET(server_socket_ipv6, &readfds);  // Podria no prenderlo si estoy lleno
+    maxfd = server_socket_ipv6;
 
     // add client sockets to read and write fd_set
     for (int i = 0; i < BACKLOG; i++) {
@@ -219,7 +222,6 @@ int main() {
         }
 
     }
-    //TODO read & write con ipv6
 
     // read from client
     for (int i = 0; i < BACKLOG; i++) {

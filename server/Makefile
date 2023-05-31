@@ -12,6 +12,6 @@ all: $(OBJECTS)
 	$(CC) $(CC_FLAGS) -I./include -c $< -o $@
 
 clean:
-	@rm -rf $(OBJECTS)
+	rm -rf src/*.o
 
 .PHONY: all clean

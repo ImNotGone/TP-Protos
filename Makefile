@@ -22,8 +22,8 @@ cpp-check:
 	cppcheck --quiet --enable=all --force --inconclusive --suppress=missingIncludeSystem .
 
 clean:
-	@rm -rf *.o
-	@rm -rf $(BINARIES)
+	rm -rf *.o
+	rm -rf $(BINARIES)
 	cd server; make clean
 
 .PHONY: all debug cpp-check clean

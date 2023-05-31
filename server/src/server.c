@@ -71,24 +71,25 @@ int main() {
 
 
   SAIN server_addr;
-    SAIN6 server_addr_ip6;
+  SAIN6 server_addr_ipv6;
 
   server_addr.sin_family = AF_INET;
   server_addr.sin_addr.s_addr = INADDR_ANY;
   server_addr.sin_port = htons(PORT);
 
-  server_socket_ipv6.sin6_family = AF_INET6;
-  server_socket_ipv6.sin6_addr = in6addr_any;
-  server_socket_ipv6.sin6_port= htons(PORT)
+  server_addr_ipv6.sin6_family = AF_INET6;
+  server_addr_ipv6.sin6_addr = in6addr_any;
+  server_addr_ipv6.sin6_port= htons(PORT);
 
   if (bind(server_socket, (SA *)&server_addr, sizeof(server_addr)) < 0) {
     perror("bind failed");
     exit(EXIT_FAILURE);
   }
-    if(bind(server_socket_ipv6,(SA *)&server_addr_ip6, sizeof(server_addr_ip6))<0){
-        perror("ipv6 bind failed");
-        exit(EXIT_FAILURE);
-    }
+
+  if(bind(server_socket_ipv6,(SA *)&server_addr_ipv6, sizeof(server_addr_ipv6))<0){
+    perror("ipv6 bind failed");
+    exit(EXIT_FAILURE);
+  }
 
   // QUEUED_CONNECTIONS -> cuantas conexiones puedo encolar (no atender, sino
   // tener pendientes)
@@ -201,7 +202,7 @@ int main() {
         // LOG
         printf("[NEW CONNECTION], socket_descriptor: %d, ip: %s, port: %d\n",
                client_socket, inet_ntop(AF_INET6, &(client_addr.sin6_addr),str_addr, sizeof(str_addr)),
-               ntohs(client_addr.sin_port));
+               ntohs(client_addr.sin6_port));
 
         found_space = FALSE;
         int i;

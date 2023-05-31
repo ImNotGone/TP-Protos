@@ -1,2 +1,3 @@
 *.o
 pop3_server
+.idea

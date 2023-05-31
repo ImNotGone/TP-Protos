@@ -29,39 +29,66 @@ typedef struct client {
 } client_t;
 
 typedef struct sockaddr_in SAIN;
+typedef struct sockaddr_in6 SAIN6;
 typedef struct sockaddr SA;
 
 int main() {
   // Cierro stdin
   fclose(stdin);
 
-  // Armo el socket
+  // Armo los sockets
   int server_socket;
+  int server_socket_ipv6;
+    char str_addr[INET6_ADDRSTRLEN];
 
   // === Request a socket ===
   if ((server_socket = socket(AF_INET, SOCK_STREAM, TCP)) < 0) {
     perror("socket failed");
     exit(EXIT_FAILURE);
   }
+  if((server_socket_ipv6= socket(AF_INET6, SOCK_STREAM, TCP))<0){
+        perror("ipv6 socket failed");
+        exit(EXIT_FAILURE);
+  }
 
   // === Set socket opt ===
   int reuse = 1;
-  setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse,
-             sizeof(reuse));
+  if((setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse,
+             sizeof(reuse)))<0){
+      perror("setsockopt error");
+      exit(EXIT_FAILURE);
+  }
+
+    if((setsockopt(server_socket_ipv6, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse,
+                   sizeof(reuse)))<0){
+        perror("ipv6 setsockopt error");
+        exit(EXIT_FAILURE);
+    }
   // ...
   // ...
   // ...
 
+
+
   SAIN server_addr;
+    SAIN6 server_addr_ip6;
 
   server_addr.sin_family = AF_INET;
   server_addr.sin_addr.s_addr = INADDR_ANY;
   server_addr.sin_port = htons(PORT);
 
+  server_socket_ipv6.sin6_family = AF_INET6;
+  server_socket_ipv6.sin6_addr = in6addr_any;
+  server_socket_ipv6.sin6_port= htons(PORT)
+
   if (bind(server_socket, (SA *)&server_addr, sizeof(server_addr)) < 0) {
     perror("bind failed");
     exit(EXIT_FAILURE);
   }
+    if(bind(server_socket_ipv6,(SA *)&server_addr_ip6, sizeof(server_addr_ip6))<0){
+        perror("ipv6 bind failed");
+        exit(EXIT_FAILURE);
+    }
 
   // QUEUED_CONNECTIONS -> cuantas conexiones puedo encolar (no atender, sino
   // tener pendientes)
@@ -69,6 +96,10 @@ int main() {
     perror("listen failed");
     exit(EXIT_FAILURE);
   }
+    if (listen(server_socket_ipv6, QUEUED_CONNECTIONS) < 0) {
+        perror("ipv6 listen failed");
+        exit(EXIT_FAILURE);
+    }
 
   puts("=== [SERVER STARTED] ===");
   printf("[INFO] Listening on port %d\n", PORT);
@@ -156,6 +187,38 @@ int main() {
       //    perror("send error");
       //}
     }
+    //ipv6 section
+    if(FD_ISSET(server_socket_ipv6, &readfds)){
+        SAIN6 client_addr;
+        socklen_t addr_len = sizeof(SAIN6);
+        int client_socket =
+                accept(server_socket_ipv6, (SA *)&client_addr, &(addr_len));
+        if (client_socket < 0) {
+            perror("accept error");
+            exit(EXIT_FAILURE);
+        }
+
+        // LOG
+        printf("[NEW CONNECTION], socket_descriptor: %d, ip: %s, port: %d\n",
+               client_socket, inet_ntop(AF_INET6, &(client_addr.sin6_addr),str_addr, sizeof(str_addr)),
+               ntohs(client_addr.sin_port));
+
+        found_space = FALSE;
+        int i;
+        for (i = 0; i < BACKLOG && !(found_space); i++) {
+            if (clients[i].client_socket == 0) {
+                clients[i].client_socket = client_socket;
+                printf("[INFO] added client at pos %d\n", i);
+                found_space = TRUE;
+            }
+        }
+
+        if (found_space == FALSE) {
+            close(client_socket);
+        }
+
+    }
+    //TODO read & write con ipv6
 
     // read from client
     for (int i = 0; i < BACKLOG; i++) {

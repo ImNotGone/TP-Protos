@@ -9,7 +9,7 @@ all: $(OBJECTS)
 %.o: %.c
 	# $< first prerequisite
 	# $@ target
-	$(CC) $(COMP_FLAGS) -I./include -c $< -o $@
+	$(CC) $(CC_FLAGS) -I./include -c $< -o $@
 
 clean:
 	@rm -rf $(OBJECTS)

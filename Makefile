@@ -14,7 +14,7 @@ BINARIES=$(SERVER_BINARY)
 # make rules
 all: $(BINARIES)
 
-debug: COMP_FLAGS+=-g
+debug: CC_FLAGS+=-g
 debug: LD_FLAGS+=-g
 debug: all
 

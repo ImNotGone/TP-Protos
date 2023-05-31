@@ -18,6 +18,9 @@ debug: CC_FLAGS+=-g
 debug: LD_FLAGS+=-g
 debug: all
 
+test:
+	cd server; make test
+
 cpp-check:
 	cppcheck --quiet --enable=all --force --inconclusive --suppress=missingIncludeSystem .
 
@@ -26,7 +29,7 @@ clean:
 	rm -rf $(BINARIES)
 	cd server; make clean
 
-.PHONY: all debug cpp-check clean
+.PHONY: all debug test cpp-check clean
 
 
 $(OBJECTS_SERVER): $(SOURCES_SERVER) $(HEADERS_SERVER)

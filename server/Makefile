@@ -2,9 +2,23 @@
 include ../Makefile.inc
 
 SOURCES=$(wildcard src/*.c)
+TESTS=$(wildcard test/*.c)
+TESTS_TARGET=$(TESTS:.c=)
 OBJECTS=$(SOURCES:.c=.o)
 
 all: $(OBJECTS)
+
+test: $(TESTS_TARGET)
+
+test/test_%: src/%.c test/test_%.c
+	$(CC) $(CC_FLAGS) -I./include $^ -o $@
+	@if ./$@; then \
+		echo "\033[32m$@\033[0m"; \
+	else \
+		echo "\033[31m$@\033[0m"; \
+	fi
+	# borro los tests para que se corran denuevo
+	rm $@
 
 %.o: %.c
 	# $< first prerequisite
@@ -13,5 +27,6 @@ all: $(OBJECTS)
 
 clean:
 	rm -rf src/*.o
+	rm -rf $(TESTS_TARGET)
 
-.PHONY: all clean
+.PHONY: all test clean

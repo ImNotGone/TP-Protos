@@ -4,18 +4,23 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-/*
-#define MAX_DATA_SIZE 3
+// per RFC 1939 (considering max len for commands and arguments)
+// TODO: ver la max cant de arguments
+#define MAX_COMMAND_LEN 4
+#define MAX_ARG_LEN     40
+#define MAX_ARG_COUNT   2
 
 struct parser_event {
-    unsigned type;
-    uint8_t data[MAX_DATA_SIZE];
-    uint8_t n;
+    // unsigned type;
+    uint8_t cmd[MAX_COMMAND_LEN];
+    uint8_t cmd_len;
+    uint8_t args[MAX_ARG_COUNT][MAX_ARG_LEN];
+    uint8_t args_len[MAX_ARG_COUNT];
+    uint8_t argc;
     struct parser_event * next;
 };
 
 typedef void (*action)(struct parser_event * ret, const uint8_t c);
-*/
 
 typedef unsigned state;
 
@@ -31,7 +36,7 @@ struct parser_transition {
 
     // act1 will be triggered for this transaction
     // THEREFORE IT IS NEEDED and can not be left undefined
-    //action act1;
+    action action;
 
     // act2 is optional
     //action act2;
@@ -57,7 +62,7 @@ typedef struct parserCDT * parserADT;
 
 parserADT parser_init(parser_configuration * conf);
 
-state parser_consume(parserADT p, const uint8_t c);
+struct parser_event * parser_consume(parserADT p, const uint8_t c);
 
 void parser_reset(parserADT p);
 

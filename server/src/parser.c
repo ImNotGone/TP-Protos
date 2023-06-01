@@ -12,6 +12,9 @@ typedef struct parserCDT {
     // parsers current state
     // normaly represented usign an enum
     state state;
+
+    // Optional pointer to save additional parsing info
+    struct parser_event event;
 } parserCDT;
 
 parserADT parser_init(parser_configuration * conf) {
@@ -23,7 +26,10 @@ parserADT parser_init(parser_configuration * conf) {
     return ret;
 }
 
-state parser_consume(parserADT p, const uint8_t c) {
+struct parser_event * parser_consume(parserADT p, const uint8_t c) {
+
+    // reset event.next
+    p->event.next = NULL;
 
     // get transitions for the current state
     const struct parser_transition * transitions = p->conf->transitions_for_states[p->state];
@@ -35,6 +41,7 @@ state parser_consume(parserADT p, const uint8_t c) {
     // if a transition matches its when case then change state
     for (size_t i = 0; i < transition_count; i++) {
         const int when = transitions[i].when;
+        const action action = transitions[i].action;
         // matched = ((c == when) || (ANY == when));
         if(when <= UINT8_MAX) {
             matched = (c == when);
@@ -44,13 +51,14 @@ state parser_consume(parserADT p, const uint8_t c) {
 
         // update state, exit loop
         if(matched) {
+            action(&p->event, c);
             p->state = transitions[i].dest_state;
             break;
         }
     }
 
     // return current state
-    return p->state;
+    return &p->event;
 }
 
 void parser_reset(parserADT p) {

@@ -27,6 +27,7 @@ void append_to_arg(struct parser_event * ret, const uint8_t c) {
         // TODO: inform error
         return;
     }
+    // TODO: revisar si los args son case sensitive
     ret->args[ret->argc][ret->args_len[ret->argc]++] = tolower(c);
 }
 
@@ -105,12 +106,12 @@ static struct parser_configuration configuration = {
 int main() {
     parserADT parser = parser_init(&configuration);
 
-    char * line = "UsEr gmartone\r\n";
+    char * line = "UsEr gmaRtone\r\n";
     char * expected_cmd  = "user";
-    int expected_cmd_len = strlen(expected_cmd);
-    char * expected_arg1 = "gmartone";
-    int expected_arg1_len = strlen(expected_arg1);
     char * expected_arg2 = "";
+    char * expected_arg1 = "gmartone";
+    int expected_cmd_len = strlen(expected_cmd);
+    int expected_arg1_len = strlen(expected_arg1);
     int expected_arg2_len = strlen(expected_arg2);
 
     int i;

@@ -1,4 +1,3 @@
-#include "parser.h"
 #include <common.h>
 #include <selector.h>
 #include <stdlib.h>
@@ -7,6 +6,7 @@
 #include <assert.h>
 #include <state-machine.h>
 #include <pop3-parser.h>
+#include <logger.h>
 
 #define BUFFLEN 1024
 
@@ -60,13 +60,13 @@ void pop3_server_accept(struct selector_key* key) {
     int client_sd = accept(key->fd, (SA *)&client_addr, &addr_len);
 
     if(client_sd < 0) {
-        // TODO: log accept error
+        log(LOGGER_ERROR, "%s", "[ERROR] accept error, client sd was negative");
         return;
     }
 
     // TODO: check condition
     if(client_sd > SELECTOR_INITIAL_ELEMENTS) {
-        // TODO: log selector is out of space
+        log(LOGGER_INFO, "%s", "[INFO] client could not be added due to selector beeing full");
         close(client_sd);
         return;
     }
@@ -87,14 +87,14 @@ void pop3_server_accept(struct selector_key* key) {
 
     selector_status selector_status = selector_register(key->s, client_sd, &pop3_client_handler, OP_READ, client_data);
     if(selector_status != SELECTOR_SUCCESS) {
-        // TODO: log selector error
+        log(LOGGER_ERROR, "[ERROR] selector error, client sd:%d could not be registered", client_sd);
         close(client_sd);
         parser_destroy(client_data->parser);
         free(client_data);
         return;
     }
 
-    // TODO: log success
+    log(LOGGER_INFO, "[INFO] client connection with sd:%d accepted", client_sd);
     return;
 }
 

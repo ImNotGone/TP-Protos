@@ -9,7 +9,7 @@
 *  Alternativa: usar syslog para un log mas completo. Ver secciÃ³n 13.4 del libro de  Stevens
 */
 
-typedef enum {DEBUG=0, INFO, ERROR, FATAL} LOG_LEVEL;
+typedef enum {LOGGER_DEBUG=0, LOGGER_INFO, LOGGER_ERROR, LOGGER_FATAL} LOG_LEVEL;
 
 extern LOG_LEVEL current_level;
 
@@ -25,5 +25,5 @@ char * levelDescription(LOG_LEVEL level);
 	fprintf (stderr, "%s: %s:%d, ", levelDescription(level), __FILE__, __LINE__); \
 	fprintf(stderr, fmt, ##__VA_ARGS__); \
 	fprintf(stderr,"\n"); }\
-	if ( level==FATAL) exit(1);}
+	if ( level==LOGGER_FATAL) exit(1);}
 #endif

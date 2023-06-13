@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <pop3-parser.h>
+#include <logger.h>
 
 enum states {
     START,
@@ -17,7 +18,7 @@ enum states {
 
 static void append_to_command(struct parser_event * ret, const uint8_t c) {
     if (ret->cmd_len == MAX_COMMAND_LEN) {
-        // TODO: inform error
+        log(LOGGER_ERROR, "[ERROR] parsing command, cmd_len reached max of %d", MAX_COMMAND_LEN);
         return;
     }
     ret->cmd[ret->cmd_len++] = tolower(c);
@@ -25,7 +26,7 @@ static void append_to_command(struct parser_event * ret, const uint8_t c) {
 
 static void append_to_arg(struct parser_event * ret, const uint8_t c) {
     if(ret->args_len[ret->argc] == MAX_ARG_LEN) {
-        // TODO: inform error
+        log(LOGGER_ERROR, "[ERROR] parsing command, args_len for arg %d reached max of %d", ret->argc,  MAX_ARG_LEN);
         return;
     }
     // TODO: revisar si los args son case sensitive
@@ -34,7 +35,7 @@ static void append_to_arg(struct parser_event * ret, const uint8_t c) {
 
 static void increment_argc(struct parser_event * ret, const uint8_t c) {
     if(ret->argc == MAX_ARG_COUNT) {
-        // TODO: inform error
+        log(LOGGER_ERROR, "[ERROR] parsing command, argc reached max of %d", MAX_ARG_COUNT);
         return;
     }
     ret->argc++;

@@ -4,6 +4,7 @@
  */
 #include <stdlib.h>
 #include <state-machine.h>
+#include <logger.h>
 
 #define N(x) (sizeof(x)/sizeof((x)[0]))
 
@@ -54,6 +55,7 @@ unsigned
 state_machine_handler_read(struct state_machine *state_machine, struct selector_key *key) {
     handle_first(state_machine, key);
     if(state_machine->current->on_read_ready == 0) {
+        log(LOGGER_ERROR, "%s", "no read handler was set");
         abort();
     }
     const unsigned int ret = state_machine->current->on_read_ready(key);
@@ -66,6 +68,7 @@ unsigned
 state_machine_handler_write(struct state_machine *state_machine, struct selector_key *key) {
     handle_first(state_machine, key);
     if(state_machine->current->on_write_ready == 0) {
+        log(LOGGER_ERROR, "%s", "no write handler was set");
         abort();
     }
     const unsigned int ret = state_machine->current->on_write_ready(key);
@@ -78,6 +81,7 @@ unsigned
 state_machine_handler_block(struct state_machine *state_machine, struct selector_key *key) {
     handle_first(state_machine, key);
     if(state_machine->current->on_block_ready == 0) {
+        log(LOGGER_ERROR, "%s", "no block handler was set");
         abort();
     }
     const unsigned int ret = state_machine->current->on_block_ready(key);

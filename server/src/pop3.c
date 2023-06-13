@@ -4,15 +4,40 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <assert.h>
+#include <state-machine.h>
 
 #define BUFFLEN 1024
 
 typedef struct client {
+    state_machine_t state_machine;
   char buffer[BUFFLEN];
   int client_socket;
   size_t start_index;
   size_t size;
 } client_t;
+
+typedef enum states {
+    AUTHORIZATION,
+    TRANSACTION,
+    UPDATE,
+    ERROR,
+} states_t;
+
+// TODO: fill handlers
+static const struct state_definition client_states[] = {
+    {
+        .state = AUTHORIZATION,
+    },
+    {
+        .state = TRANSACTION,
+    },
+    {
+        .state = UPDATE,
+    },
+    {
+        .state = ERROR,
+    }
+};
 
 static void pop3_client_read();
 static void pop3_client_write();
@@ -46,6 +71,14 @@ void pop3_server_accept(struct selector_key* key) {
     client_t * client_data = calloc(1, sizeof(client_t));
 
     // TODO: fill client_data
+
+    // ==== Client state machine ====
+    client_data->state_machine.initial = AUTHORIZATION;
+    client_data->state_machine.states = client_states;
+    client_data->state_machine.max_state = ERROR;
+
+
+    state_machine_init(&client_data->state_machine);
 
     selector_status selector_status = selector_register(key->s, client_sd, &pop3_client_handler, OP_READ, client_data);
     if(selector_status != SELECTOR_SUCCESS) {

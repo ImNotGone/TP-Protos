@@ -3,7 +3,7 @@ include Makefile.inc
 
 # server
 SERVER_BINARY=pop3_server
-SOURCES_SERVER=$(wildcard server/src/*.c)
+SOURCES_SERVER=$(wildcard server/src/*.c server/src/states/*.c)
 HEADERS_SERVER=$(wildcard server/include/*.h)
 OBJECTS_SERVER=$(SOURCES_SERVER:.c=.o)
 

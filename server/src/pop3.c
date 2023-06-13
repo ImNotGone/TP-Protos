@@ -4,40 +4,23 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <assert.h>
-#include <state-machine.h>
-#include <pop3-parser.h>
 #include <logger.h>
-#include <buffer.h>
-
-#define BUFFLEN 1024
-#define GREETING_MSG "OK! HELLO"
-
-typedef struct client {
-    state_machine_t state_machine;
-    parser_t parser;
-
-    int client_sd;
-
-    struct buffer buffer_in;
-    uint8_t buffer_in_data[BUFFLEN];
-
-    struct buffer buffer_out;
-    uint8_t buffer_out_data[BUFFLEN];
-} client_t;
-
-#define CLIENT_DATA(key) ((client_t *)(key->data))
-
-typedef enum states {
-    AUTHORIZATION,
-    TRANSACTION,
-    UPDATE,
-    ERROR,
-} states_t;
+#include <states/greeting.h>
+#include <pop3.h>
 
 // TODO: fill handlers
 static const struct state_definition client_states[] = {
+    {
+        .state = GREETING,
+        .on_arrival =       greeting_on_arrival,
+        .on_departure =     NULL,
+        .on_read_ready =    NULL,
+        .on_write_ready =   greeting_write,
+        .on_block_ready =   NULL,
+    },
     {
         .state = AUTHORIZATION,
         .on_arrival =       NULL,
@@ -108,7 +91,7 @@ void pop3_server_accept(struct selector_key* key) {
     client_data->client_sd = client_sd;
 
     // ==== Client state machine ====
-    client_data->state_machine.initial = AUTHORIZATION;
+    client_data->state_machine.initial = GREETING;
     client_data->state_machine.states = client_states;
     client_data->state_machine.max_state = ERROR;
 
@@ -119,13 +102,12 @@ void pop3_server_accept(struct selector_key* key) {
     buffer_init(&client_data->buffer_in, BUFFLEN, client_data->buffer_in_data);
     buffer_init(&client_data->buffer_out, BUFFLEN, client_data->buffer_out_data);
 
-    strcpy((char *)&client_data->buffer_out_data, GREETING_MSG);
-
-    buffer_write_adv(&client_data->buffer_out, strlen(GREETING_MSG));
-
     state_machine_init(&client_data->state_machine);
 
-    selector_status selector_status = selector_register(key->s, client_sd, &pop3_client_handler, OP_READ, client_data);
+    // ==== Register client in selector ====
+    // selector is set to write because we want to send the greeting message
+    // to the client
+    selector_status selector_status = selector_register(key->s, client_sd, &pop3_client_handler, OP_WRITE, client_data);
     if(selector_status != SELECTOR_SUCCESS) {
         log(LOGGER_ERROR, "selector error, client sd:%d could not be registered", client_sd);
         close(client_sd);

@@ -1,7 +1,7 @@
 # compilation flags
 include ../Makefile.inc
 
-SOURCES=$(wildcard src/*.c)
+SOURCES=$(wildcard src/*.c src/states/*.c)
 TESTS=$(wildcard test/*.c)
 TESTS_TARGET=$(TESTS:.c=)
 OBJECTS=$(SOURCES:.c=.o)
@@ -27,6 +27,7 @@ test/test_parser: src/parser.c src/pop3-parser.c src/logger.c test/test_parser.c
 
 clean:
 	rm -rf src/*.o
+	rm -rf src/states/*.o
 	rm -rf $(TESTS_TARGET)
 
 .PHONY: all test clean

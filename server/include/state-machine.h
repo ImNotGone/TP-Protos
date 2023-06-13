@@ -1,6 +1,8 @@
 #ifndef STM_H_wL7YxN65ZHqKGvCPrNbPtMJgL8B
 #define STM_H_wL7YxN65ZHqKGvCPrNbPtMJgL8B
 
+#include <selector.h>
+
 /**
  * state_machine.c - pequeño motor de maquina de estados donde los eventos son los
  *         del selector.c
@@ -21,7 +23,7 @@
  * de selector.c.
  */
 
-struct state_machine {
+typedef struct state_machine {
     /** declaración de cual es el estado inicial */
     unsigned                      initial;
     /**
@@ -32,9 +34,7 @@ struct state_machine {
     unsigned                      max_state;
     /** estado actual */
     const struct state_definition *current;
-};
-
-struct selector_key *key;
+} state_machine_t;
 
 /**
  * definición de un estado de la máquina de estados

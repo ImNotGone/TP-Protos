@@ -12,11 +12,6 @@ void greeting_on_arrival(unsigned state, struct selector_key * key) {
 
     buffer_write_adv(&client_data->buffer_out, strlen(GREETING_MSG));
 
-    if(selector_set_interest_key(key, OP_WRITE) != SELECTOR_SUCCESS) {
-        log(LOGGER_ERROR, "could not set OP_READ for sd:%d", key->fd);
-        return;
-    }
-
     return;
 }
 
@@ -26,7 +21,7 @@ states_t greeting_write(struct selector_key * key) {
     size_t bytes_available;
     uint8_t * buffer_out = buffer_read_ptr(&client_data->buffer_out, &bytes_available);
 
-    ssize_t bytes_sent = send(key->fd, buffer_out, 1, MSG_NOSIGNAL);
+    ssize_t bytes_sent = send(key->fd, buffer_out, bytes_available, MSG_NOSIGNAL);
 
     if(bytes_sent < 0) {
         log(LOGGER_ERROR, "send() < 0 on greeting to sd:%d", key->fd);

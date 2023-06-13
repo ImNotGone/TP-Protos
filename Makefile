@@ -22,7 +22,7 @@ test:
 	cd server; make test
 
 cpp-check:
-	cppcheck --quiet --enable=all --force --inconclusive --suppress=missingIncludeSystem .
+	cppcheck --quiet --enable=all --force --inconclusive --suppress=missingIncludeSystem -I server/include .
 
 clean:
 	rm -rf *.o

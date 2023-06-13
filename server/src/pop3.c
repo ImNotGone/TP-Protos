@@ -1,3 +1,4 @@
+#include "parser.h"
 #include <common.h>
 #include <selector.h>
 #include <stdlib.h>
@@ -5,11 +6,13 @@
 #include <unistd.h>
 #include <assert.h>
 #include <state-machine.h>
+#include <pop3-parser.h>
 
 #define BUFFLEN 1024
 
 typedef struct client {
     state_machine_t state_machine;
+    parser_t parser;
   char buffer[BUFFLEN];
   int client_socket;
   size_t start_index;
@@ -77,6 +80,8 @@ void pop3_server_accept(struct selector_key* key) {
     client_data->state_machine.states = client_states;
     client_data->state_machine.max_state = ERROR;
 
+    // ==== Client parser ====
+    client_data->parser = parser_init(get_pop3_parser_configuration());
 
     state_machine_init(&client_data->state_machine);
 
@@ -84,11 +89,13 @@ void pop3_server_accept(struct selector_key* key) {
     if(selector_status != SELECTOR_SUCCESS) {
         // TODO: log selector error
         close(client_sd);
+        parser_destroy(client_data->parser);
         free(client_data);
         return;
     }
 
     // TODO: log success
+    return;
 }
 
 static void pop3_client_read() {

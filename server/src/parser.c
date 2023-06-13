@@ -17,8 +17,8 @@ typedef struct parserCDT {
     struct parser_event event;
 } parserCDT;
 
-parserADT parser_init(parser_configuration * conf) {
-    parserADT ret = calloc(1, sizeof(parserCDT));
+parser_t parser_init(parser_configuration * conf) {
+    parser_t ret = calloc(1, sizeof(parserCDT));
     if(ret != NULL) {
         ret->conf = conf;
         ret->state = conf->start_state;
@@ -26,7 +26,7 @@ parserADT parser_init(parser_configuration * conf) {
     return ret;
 }
 
-struct parser_event * parser_consume(parserADT p, const uint8_t c) {
+struct parser_event * parser_consume(parser_t p, const uint8_t c) {
 
     // reset event.next
     p->event.next = NULL;
@@ -61,10 +61,10 @@ struct parser_event * parser_consume(parserADT p, const uint8_t c) {
     return &p->event;
 }
 
-void parser_reset(parserADT p) {
+void parser_reset(parser_t p) {
     p->state = p->conf->start_state;
 }
 
-void parser_destroy(parserADT p) {
+void parser_destroy(parser_t p) {
     free(p);
 }

@@ -58,14 +58,14 @@ typedef struct parser_configuration {
     const state start_state;
 } parser_configuration;
 
-typedef struct parserCDT * parserADT;
+typedef struct parserCDT * parser_t;
 
-parserADT parser_init(parser_configuration * conf);
+parser_t parser_init(parser_configuration * conf);
 
-struct parser_event * parser_consume(parserADT p, const uint8_t c);
+struct parser_event * parser_consume(parser_t p, const uint8_t c);
 
-void parser_reset(parserADT p);
+void parser_reset(parser_t p);
 
-void parser_destroy(parserADT p);
+void parser_destroy(parser_t p);
 
 #endif

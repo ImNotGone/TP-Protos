@@ -1,22 +1,30 @@
+#include <bits/stdint-uintn.h>
 #include <common.h>
 #include <selector.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <assert.h>
 #include <state-machine.h>
 #include <pop3-parser.h>
 #include <logger.h>
+#include <buffer.h>
 
 #define BUFFLEN 1024
+#define GREETING_MSG "OK! HELLO"
 
 typedef struct client {
     state_machine_t state_machine;
     parser_t parser;
-  char buffer[BUFFLEN];
+
     int client_sd;
-  size_t start_index;
-  size_t size;
+
+    struct buffer buffer_in;
+    uint8_t buffer_in_data[BUFFLEN];
+
+    struct buffer buffer_out;
+    uint8_t buffer_out_data[BUFFLEN];
 } client_t;
 
 #define CLIENT_DATA(key) ((client_t *)(key->data))
@@ -32,15 +40,35 @@ typedef enum states {
 static const struct state_definition client_states[] = {
     {
         .state = AUTHORIZATION,
+        .on_arrival =       NULL,
+        .on_departure =     NULL,
+        .on_read_ready =    NULL,
+        .on_write_ready =   NULL,
+        .on_block_ready =   NULL,
     },
     {
         .state = TRANSACTION,
+        .on_arrival =       NULL,
+        .on_departure =     NULL,
+        .on_read_ready =    NULL,
+        .on_write_ready =   NULL,
+        .on_block_ready =   NULL,
     },
     {
         .state = UPDATE,
+        .on_arrival =       NULL,
+        .on_departure =     NULL,
+        .on_read_ready =    NULL,
+        .on_write_ready =   NULL,
+        .on_block_ready =   NULL,
     },
     {
         .state = ERROR,
+        .on_arrival =       NULL,
+        .on_departure =     NULL,
+        .on_read_ready =    NULL,
+        .on_write_ready =   NULL,
+        .on_block_ready =   NULL,
     }
 };
 
@@ -86,6 +114,14 @@ void pop3_server_accept(struct selector_key* key) {
 
     // ==== Client parser ====
     client_data->parser = parser_init(get_pop3_parser_configuration());
+
+    // ==== Client buffer ====
+    buffer_init(&client_data->buffer_in, BUFFLEN, client_data->buffer_in_data);
+    buffer_init(&client_data->buffer_out, BUFFLEN, client_data->buffer_out_data);
+
+    strcpy((char *)&client_data->buffer_out_data, GREETING_MSG);
+
+    buffer_write_adv(&client_data->buffer_out, strlen(GREETING_MSG));
 
     state_machine_init(&client_data->state_machine);
 

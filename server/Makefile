@@ -10,7 +10,7 @@ all: $(OBJECTS)
 
 test: $(TESTS_TARGET)
 
-test/test_parser: src/parser.c src/pop3-parser.c test/test_parser.c
+test/test_parser: src/parser.c src/pop3-parser.c src/logger.c test/test_parser.c
 	$(CC) $(CC_FLAGS) -I./include $^ -o $@
 	@if ./$@; then \
 		echo "\033[32m$@\033[0m"; \

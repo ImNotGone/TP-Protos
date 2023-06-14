@@ -1,7 +1,7 @@
 #ifndef GREETING_H
 #define GREETING_H
 
-#define GREETING_MSG "+OK POP3 SERVER READY\n"
+#define GREETING_MSG "+OK POP3 SERVER READY\r\n"
 
 #include <pop3.h>
 

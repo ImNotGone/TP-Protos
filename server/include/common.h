@@ -10,6 +10,8 @@
 #define QUEUED_CONNECTIONS 10
 #define BACKLOG 500
 
+#define PORT_MONITOR 8889
+
 #define BUFFLEN 1024
 
 typedef struct sockaddr_in SAIN;

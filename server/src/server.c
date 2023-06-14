@@ -67,8 +67,8 @@ int main() {
     int exit_value = EXIT_SUCCESS;
 
     // Armo los sockets
-    int server_socket = 0;
-    int server_socket_ipv6 = 0;
+    int server_socket = -1;
+    int server_socket_ipv6 = -1;
 
     // === Request a socket ===
     if ((server_socket = socket(AF_INET, SOCK_STREAM, TCP)) < 0) {

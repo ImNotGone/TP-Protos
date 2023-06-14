@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <logger.h>
 #include <states/greeting.h>
+#include <states/authorization.h>
 #include <pop3.h>
 
 // TODO: fill handlers
@@ -25,8 +26,8 @@ static const struct state_definition client_states[] = {
         .state = AUTHORIZATION,
         .on_arrival =       NULL,
         .on_departure =     NULL,
-        .on_read_ready =    NULL,
-        .on_write_ready =   NULL,
+        .on_read_ready =    authorization_read,
+        .on_write_ready =   authorization_write,
         .on_block_ready =   NULL,
     },
     {

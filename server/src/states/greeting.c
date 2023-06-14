@@ -35,6 +35,7 @@ states_t greeting_write(struct selector_key * key) {
 
     buffer_read_adv(&client_data->buffer_out, bytes_sent);
 
+    // no pude mandar toda la linea
     if(buffer_can_read(&client_data->buffer_out)) {
         return GREETING;
     }

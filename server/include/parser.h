@@ -11,7 +11,7 @@
 #define MAX_ARG_COUNT   2
 
 struct parser_event {
-    // unsigned type;
+    unsigned type;
     uint8_t cmd[MAX_COMMAND_LEN];
     uint8_t cmd_len;
     uint8_t args[MAX_ARG_COUNT][MAX_ARG_LEN];

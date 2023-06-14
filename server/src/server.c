@@ -13,13 +13,14 @@
 #include <common.h>
 #include <pop3.h>
 #include <logger.h>
+#include <monitor.h>
 
 static bool server_terminated = false;
 
 static void sigterm_handler(const int signal);
 static void sigint_handler(const int signal);
 
-int main() {
+int main(void) {
     // Cierro stdin
     fclose(stdin);
 
@@ -64,11 +65,19 @@ int main() {
         .handle_close = NULL,
     };
 
+    const fd_handler monitor_socket_handler = {
+            .handle_read = NULL, //TODO ver que funcion va aca
+            .handle_write = NULL,
+            .handle_block = NULL,
+            .handle_close = NULL,
+    };
+
     int exit_value = EXIT_SUCCESS;
 
     // Armo los sockets
     int server_socket = -1;
     int server_socket_ipv6 = -1;
+    int monitor_socket = -1;
 
     // === Request a socket ===
     if ((server_socket = socket(AF_INET, SOCK_STREAM, TCP)) < 0) {
@@ -78,6 +87,12 @@ int main() {
     }
     if ((server_socket_ipv6 = socket(AF_INET6, SOCK_STREAM, TCP)) < 0) {
         log(LOGGER_ERROR, "%s", "ipv6 socket failed");
+        exit_value = EXIT_FAILURE;
+        goto exit;
+    }
+
+    if ((monitor_socket = socket(AF_INET6, SOCK_STREAM, TCP)) < 0) {
+        log(LOGGER_ERROR, "%s", "monitor socket failed");
         exit_value = EXIT_FAILURE;
         goto exit;
     }
@@ -93,7 +108,7 @@ int main() {
 
     if ((setsockopt(server_socket_ipv6, SOL_SOCKET, SO_REUSEADDR,
                   (const char *)&reuse, sizeof(reuse))) < 0 ||
-      (setsockopt(server_socket_ipv6, SOL_IPV6, IPV6_V6ONLY,
+      (setsockopt(server_socket_ipv6,  SOL_IPV6, IPV6_V6ONLY,
                   (const char *)&reuse, sizeof(reuse))) < 0) {
         log(LOGGER_ERROR, "%s", "ipv6 setsockopt error");
         exit_value = EXIT_FAILURE;
@@ -102,6 +117,7 @@ int main() {
 
     SAIN server_addr;
     SAIN6 server_addr_ipv6;
+    SAIN6 monitor_addr;
 
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
@@ -111,6 +127,11 @@ int main() {
     server_addr_ipv6.sin6_addr = in6addr_any;
     server_addr_ipv6.sin6_port = htons(PORT);
 
+    monitor_addr.sin6_family= AF_INET6;
+    monitor_addr.sin6_addr= in6addr_any;
+    monitor_addr.sin6_port= htons(PORT_MONITOR);
+
+
     if (bind(server_socket, (SA *)&server_addr, sizeof(server_addr)) < 0) {
         log(LOGGER_ERROR, "%s", "bind failed");
         exit_value = EXIT_FAILURE;
@@ -118,11 +139,27 @@ int main() {
     }
 
     if (bind(server_socket_ipv6, (SA *)&server_addr_ipv6,
-           sizeof(server_addr_ipv6)) < 0) {
+           sizeof(server_addr_ipv6)) < 0) {if ((server_socket_ipv6 = socket(AF_INET6, SOCK_STREAM, TCP)) < 0) {
+            log(LOGGER_ERROR, "%s", "ipv6 socket failed");
+            exit_value = EXIT_FAILURE;
+            goto exit;
+        }
         log(LOGGER_ERROR, "%s", "ipv6 bind failed");
         exit_value = EXIT_FAILURE;
         goto exit;
     }
+
+    if (bind(monitor_socket, (SA *)&monitor_addr, sizeof(monitor_addr)) < 0){
+        if((monitor_socket = socket(AF_INET6, SOCK_STREAM, TCP))<0){
+            log(LOGGER_ERROR, "%s", "monitor socket failed");
+            exit_value = EXIT_FAILURE;
+            goto exit;
+        }
+        log(LOGGER_ERROR, "%s", "monitor bind failed");
+        exit_value = EXIT_FAILURE;
+        goto exit;
+    }
+
 
     // QUEUED_CONNECTIONS -> cuantas conexiones puedo encolar (no atender, sino
     // tener pendientes)
@@ -137,11 +174,18 @@ int main() {
         goto exit;
     }
 
+    if(listen(monitor_socket,QUEUED_CONNECTIONS)<0){
+        log(LOGGER_ERROR, "%s", "monitor listen failed");
+        exit_value = EXIT_FAILURE;
+        goto exit;
+    }
+
     log(LOGGER_INFO, "%s", "=== [SERVER STARTED] ===");
     log(LOGGER_INFO, "Listening on port %d", PORT);
     log(LOGGER_INFO, "Max queued connections is %d", QUEUED_CONNECTIONS);
     log(LOGGER_INFO, "Attending a maximum of %d clients", BACKLOG);
 
+    monitor_t monitor;
 
     selector_status = selector_register(selector, server_socket, &server_socket_handler, OP_READ, NULL);
     if(selector_status != SELECTOR_SUCCESS) {
@@ -154,6 +198,8 @@ int main() {
         exit_value = EXIT_FAILURE;
         goto exit;
     }
+
+    selector_status
 
     while (!server_terminated) {
         selector_status = selector_select(selector);

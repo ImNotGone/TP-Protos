@@ -199,7 +199,11 @@ int main(void) {
         goto exit;
     }
 
-    selector_status
+    selector_status = selector_register(selector, monitor_socket, &monitor_socket_handler, OP_READ, NULL);
+    if(selector_status != SELECTOR_SUCCESS) {
+        exit_value = EXIT_FAILURE;
+        goto exit;
+    }
 
     while (!server_terminated) {
         selector_status = selector_select(selector);

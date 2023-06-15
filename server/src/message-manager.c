@@ -6,6 +6,7 @@
 #include <message-manager.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <stdio.h>
 
 #define MAILDIR_PATH "/var/mail/"
 
@@ -381,6 +382,70 @@ int reset_deleted_flag(message_manager_t message_manager) {
         message_manager->message_data_array[i].marked_for_deletion = false;
         message_manager->message_count++;
         message_manager->total_message_size += message_manager->message_data_array[i].message_size;
+    }
+
+    return 0;
+}
+
+// Function to delete all the messages marked for deletion
+// // Delete all messages in the given clients maildrop that have been marked for deletion
+// Parameters:
+//   message_manager: The message manager
+// Returns:
+//   0 on success, -1 on failure
+// Note:
+//   If a file deletion fails, other messages will still be deleted
+int delete_marked_messages(message_manager_t message_manager) {
+
+    if (message_manager == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    // Get the path of the maildrop
+    int maildrop_path_length = strlen(MAILDIR_PATH) + strlen(message_manager->username) + 1;
+
+    char *maildrop_path = malloc(maildrop_path_length);
+
+    if (maildrop_path == NULL) {
+        errno = ENOMEM;
+        return -1;
+    }
+
+    strcpy(maildrop_path, MAILDIR_PATH);
+    strcat(maildrop_path, message_manager->username);
+
+    bool errorHappened = false;
+
+    // Delete all the files of the messages marked for deletion
+    for (int i = 0; i < message_manager->message_count; i++) {
+        if (message_manager->message_data_array[i].marked_for_deletion) {
+            char *filename = message_manager->message_filename_array[i];
+            char *filepath = malloc(strlen(maildrop_path) + strlen(filename) + 2);
+
+            if (filepath == NULL) {
+                errno = ENOMEM;
+                errorHappened = true;
+                continue;
+            }
+
+            strcpy(filepath, maildrop_path);
+            strcat(filepath, "/");
+            strcat(filepath, filename);
+
+            if (remove(filepath) == -1) {
+                errorHappened = true;
+            } 
+
+            free(filepath);
+        }
+    }
+
+    free(maildrop_path);
+
+    if (errorHappened) {
+        errno = EIO;
+        return -1;
     }
 
     return 0;

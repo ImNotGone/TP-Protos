@@ -115,6 +115,10 @@ int reset_deleted_flag(message_manager_t message_manager);
 //   0 on success, -1 on failure
 // Note:
 //   If a file deletion fails, other messages will still be deleted
+// Errors:
+//   EINVAL: message_manager was NULL
+//   ENOMEM: Insufficient memory to allocate the path to the message file
+//   EIO: An error occurred while deleting a message file
 int delete_marked_messages(message_manager_t message_manager);
 
 

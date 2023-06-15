@@ -6,10 +6,13 @@
 typedef struct message_data_t {
     int message_number;
     int message_size;
+
+    int marked_for_deletion;
 } message_data_t;
 
 // The message manager
 // A message manager is used to manage the messages in a clients maildrop
+// The maildrops are stored in a directory named after the clients username
 // The message manager is created by the server when a clients connection enters the TRANSACTION state
 // The message manager is freed by the server when the clients connection enters the UPDATE state 
 
@@ -18,8 +21,14 @@ typedef struct message_manager_cdt* message_manager_t;
 // Create a new message manager for the given maildrop
 // Parameters:
 //   username: The username of the maildrop to create the message manager for
+//             must be null terminated
 // Returns:
 //   A pointer to a message_manager_t struct on success, NULL on failure
+// Errors:
+//   ENOMEM: Insufficient memory to create the message manager
+//   ENOENT: The maildrop directory does not exist
+//   ENOTDIR: The maildrop path is not a directory
+//   EBUSY: The maildrop directory is locked by another connection
 message_manager_t create_message_manager(char *username);
 
 // Free the given message manager

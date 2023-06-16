@@ -10,12 +10,22 @@ all: $(OBJECTS)
 
 test: $(TESTS_TARGET)
 
-test/test_parser: src/parser.c src/pop3-parser.c src/logger.c test/test-parser.c
+test/test-parser: src/parser.c src/pop3-parser.c src/logger.c test/test-parser.c 
 	$(CC) $(CC_FLAGS) -I./include $^ -o $@
 	@if ./$@; then \
-		echo "\033[32m$@\033[0m"; \
+		echo -e "\033[32m$@\033[0m"; \
 	else \
-		echo "\033[31m$@\033[0m"; \
+		echo -e "\033[31m$@\033[0m"; \
+	fi
+	# borro los tests para que se corran denuevo
+	rm $@
+
+test/test-message-manager: src/message-manager.c test/test-message-manager.c
+	$(CC) $(CC_FLAGS) -I./include $^ -o $@
+	@if ./$@; then \
+		echo -e "\033[32m$@\033[0m"; \
+	else \
+		echo -e "\033[31m$@\033[0m"; \
 	fi
 	# borro los tests para que se corran denuevo
 	rm $@

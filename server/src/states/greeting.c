@@ -4,7 +4,7 @@
 #include <logger.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <resposes.h>
+#include <responses.h>
 #include <states/states-common.h>
 
 void greeting_on_arrival(unsigned state, struct selector_key * key) {

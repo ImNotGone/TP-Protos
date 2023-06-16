@@ -2,8 +2,7 @@
 #include <logger.h>
 #include <commands.h>
 #include <sys/socket.h>
-#include <resposes.h>
-#include <pop3.h>
+#include <responses.h>
 
 inline void states_common_response_write(struct buffer * buffer, char * response, size_t * dim) {
     while (buffer_can_write(buffer) && response[*dim] != '\0') {

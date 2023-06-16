@@ -9,7 +9,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <commands.h>
-#include <resposes.h>
+#include <responses.h>
 #include <states/states-common.h>
 
 // no me dejaba castear, asi q estoy agregando argumentos para no me joda

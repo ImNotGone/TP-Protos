@@ -47,7 +47,7 @@ static bool is_fd_same_file(int fd, const char *filepath) {
 int main() {
 
     // ============== Expected values ==============
-    char *maildrop_parent_path = "/home/cuini/Repos/Protos/server/test/resources/maildrops/";
+    char *maildrop_parent_path = "./test/resources/maildrops/";
     char *maildrop_name = "pepe";
 
     // Get all the bytes occupied by 1.txt & 2.txt
@@ -66,7 +66,7 @@ int main() {
 
     // Check if the message manager was created correctly
     assert(mm != NULL);
-    assert(strcmp(mm->maildrop_path, "/home/cuini/Repos/Protos/server/test/resources/maildrops/pepe/") == 0);
+    assert(strcmp(mm->maildrop_path, "./test/resources/maildrops/pepe/") == 0);
     assert(mm->message_array_size == 3);
     assert(mm->total_message_size == total_size);
     assert(mm->message_count == 3);

@@ -5,13 +5,24 @@
 #include <pop3.h>
 #include <states/authorization.h>
 #include <buffer.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <commands.h>
+#include <resposes.h>
+#include <states/states-common.h>
 
-static void handle_user(client_t * client_data);
-static void handle_pass(client_t * client_data);
-static void handle_quit(client_t * client_data);
+// no me dejaba castear, asi q estoy agregando argumentos para no me joda
+/*
+* src/states/authorization.c:26:41: error: cast between incompatible function types from ‘states_t (*)(client_t *, char *, int)’ {aka ‘enum states (*)(struct client
+*, char *, int)’} to ‘states_t (*)(client_t *, char *, int,  char *, int)’ {aka ‘enum states (*)(struct client *, char *, int,  char *, int)’} [-Werror=cast-functi
+on-type]
+   26 |     {.name = "user", .command_handler = (command_handler)handle_user},
+      |
+*/
+static states_t handle_user(client_t * client_data, char * user,    int user_len, char * unused1, int unused2);
+static states_t handle_pass(client_t * client_data, char * pass,    int unused1 , char * unused2, int unused3);
+static states_t handle_quit(client_t * client_data, char * unused1, int unused2 , char * unused3, int unused4);
 
 static command_t commands[] = {
     {.name = "user", .command_handler = handle_user},
@@ -21,139 +32,44 @@ static command_t commands[] = {
 
 static int cant_commands = 3;
 
-static command_handler get_command_handler(struct parser_event * parser_event, client_t * client_data, command_t * commands, int cant_commands);
-
 states_t authorization_read(struct selector_key * key) {
-    log(LOGGER_DEBUG, "Authorization reading on sd:%d", key->fd);
-    client_t * client_data = CLIENT_DATA(key);
-
-    size_t bytes_available;
-    uint8_t * buffer_in = buffer_write_ptr(&client_data->buffer_in, &bytes_available);
-
-    ssize_t bytes_read = recv(key->fd, buffer_in, bytes_available, 0);
-
-    if(bytes_read <= 0) {
-        log(LOGGER_ERROR, "recv() <= 0 on auth from sd:%d", key->fd);
-        return ERROR;
-    }
-
-    log(LOGGER_DEBUG, "recv %ld bytes from sd:%d", bytes_read, key->fd);
-    buffer_write_adv(&client_data->buffer_in, bytes_read);
-
-    while (buffer_can_read(&client_data->buffer_in)) {
-        struct parser_event * parser_event = parser_consume(client_data->parser, buffer_read(&client_data->buffer_in));
-        if(parser_event->type == PARSER_ERROR) {
-            log(LOGGER_ERROR, "parsing command from sd:%d", key->fd);
-            return ERROR;
-        }
-
-        if(parser_event->type == PARSER_IN_NEWLINE) {
-
-            command_handler command_handler = get_command_handler(parser_event, client_data, commands, cant_commands);
-            if(command_handler == NULL) {
-                log(LOGGER_ERROR, "command not supported for sd:%d", key->fd);
-                return ERROR;
-            }
-
-            command_handler(client_data);
-
-            if(selector_set_interest_key(key, OP_WRITE)  != SELECTOR_SUCCESS) {
-                log(LOGGER_ERROR, "setting selector interest to write for sd:%d", key->fd);
-                return ERROR;
-            }
-            return AUTHORIZATION;
-        }
-    }
-
-    return AUTHORIZATION;
+    return states_common_read(key, "authorization", commands, cant_commands);
 }
 
 states_t authorization_write(struct selector_key * key) {
-    log(LOGGER_DEBUG, "Authorization writing on sd:%d", key->fd);
-    client_t * client_data = CLIENT_DATA(key);
-
-    size_t bytes_available;
-    uint8_t * buffer_out = buffer_read_ptr(&client_data->buffer_out, &bytes_available);
-
-    ssize_t bytes_sent = send(key->fd, buffer_out, bytes_available, MSG_NOSIGNAL);
-
-    if(bytes_sent < 0) {
-        log(LOGGER_ERROR, "send() < 0 on greeting to sd:%d", key->fd);
-        return ERROR;
-    }
-    if(bytes_sent == 0) {
-        log(LOGGER_ERROR, "send() == 0 on greeting to sd:%d", key->fd);
-        return ERROR;
-    }
-    log(LOGGER_INFO, "sent %ld bytes to sd:%d", bytes_sent, key->fd);
-
-    buffer_read_adv(&client_data->buffer_out, bytes_sent);
-
-    // Todavia me quedan cosas por procesar
-    if(buffer_can_read(&client_data->buffer_out)) {
-        return client_data->state_machine.current->state;
-    }
-
-    // Si el buffer de entrada esta vacio
-    // pongo el selector en lectura
-    if (!buffer_can_read(&client_data->buffer_in)) {
-        if(selector_set_interest_key(key, OP_READ) != SELECTOR_SUCCESS) {
-            log(LOGGER_ERROR, "setting selector interest to read for sd:%d", key->fd);
-            return ERROR;
-        }
-    }
-
-    while (buffer_can_read(&client_data->buffer_in)) {
-        struct parser_event * parser_event = parser_consume(client_data->parser, buffer_read(&client_data->buffer_in));
-        if(parser_event->type == PARSER_ERROR) {
-            log(LOGGER_ERROR, "parsing command from sd:%d", key->fd);
-            return ERROR;
-        }
-
-        if(parser_event->type == PARSER_IN_NEWLINE) {
-
-            command_handler command_handler = get_command_handler(parser_event, client_data, commands, cant_commands);
-            if(command_handler == NULL) {
-                log(LOGGER_ERROR, "command not supported for sd:%d", key->fd);
-                return ERROR;
-            }
-
-            command_handler(client_data);
-
-            if(selector_set_interest_key(key, OP_WRITE)  != SELECTOR_SUCCESS) {
-                log(LOGGER_ERROR, "setting selector interest to write for sd:%d", key->fd);
-                return ERROR;
-            }
-            return AUTHORIZATION;
-        }
-    }
-
-
-    return TRANSACTION;
+    return states_common_write(key, "authorization", commands, cant_commands);
 }
 
-static command_handler get_command_handler(struct parser_event * parser_event, client_t * client_data, command_t * commands, int cant_commands) {
-    for(int i = 0; i < cant_commands; i++) {
-        if (strncmp(commands[i].name, (char*)parser_event->cmd, MAX_COMMAND_LEN) == 0) {
-            return commands[i].command_handler;
-        }
+static states_t handle_user(client_t * client_data, char * user, int user_len, char * unused1, int unused2) {
+    client_data->response_index = 0;
+    client_data->response = RESPONSE_USER;
+    free(client_data->user);
+    client_data->user = NULL;
+    if(user_len != 0) {
+        client_data->user = calloc(user_len, sizeof(char));
+        strcpy(client_data->user, user);
     }
-    return NULL;
+    states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+    return AUTHORIZATION;
 }
 
-// TODO: revisar estas funciones
-static void handle_user(client_t * client_data) {
-    char * s = "+OK";
-    int i = 0;
-    while(buffer_can_write(&client_data->buffer_out) && s[i] != '\0') {
-        buffer_write(&client_data->buffer_out, s[i++]);
+static states_t handle_pass(client_t * client_data, char * pass, int unused1, char * unused2, int unused3) {
+    bool authenticated = false;
+    client_data->response_index = 0;
+    // TODO: call method to check if authenticated
+    if(authenticated) {
+        client_data->response = RESPONSE_PASS_SUCCESS;
+        states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+        return TRANSACTION;
     }
+    client_data->response = RESPONSE_PASS_ERROR;
+    states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+    return AUTHORIZATION;
 }
 
-static void handle_pass(client_t * client_data) {
-
-}
-
-static void handle_quit(client_t * client_data) {
-
+static states_t handle_quit(client_t * client_data, char * unused1, int unused2, char * unused3, int unused4) {
+    client_data->response_index = 0;
+    client_data->response = RESPONSE_AUTH_QUIT;
+    states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+    return CLOSE_CONNECTION;
 }

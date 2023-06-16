@@ -2,11 +2,16 @@
 #define COMMANDS_H
 #include <pop3.h>
 
-typedef void (*command_handler)(client_t *);
+// loads the client with current command information
+typedef states_t (*command_handler)(client_t * client_data, char * arg1, int arg1_len, char * arg2, int arg2_len);
 
-typedef struct command {
+typedef struct command command_t;
+
+struct command {
     char * name;
     command_handler command_handler;
-} command_t;
+};
+
+command_t * get_command(client_t * client_data, struct parser_event * parser_event, command_t * commands, int cant_commands);
 
 #endif

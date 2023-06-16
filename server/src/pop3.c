@@ -53,6 +53,14 @@ static const struct state_definition client_states[] = {
         .on_read_ready =    NULL,
         .on_write_ready =   NULL,
         .on_block_ready =   NULL,
+    },
+    {
+        .state = CLOSE_CONNECTION,
+        .on_arrival =       NULL,
+        .on_departure =     NULL,
+        .on_read_ready =    NULL,
+        .on_write_ready =   NULL,
+        .on_block_ready =   NULL,
     }
 };
 
@@ -94,7 +102,7 @@ void pop3_server_accept(struct selector_key* key) {
     // ==== Client state machine ====
     client_data->state_machine.initial = GREETING;
     client_data->state_machine.states = client_states;
-    client_data->state_machine.max_state = ERROR;
+    client_data->state_machine.max_state = CLOSE_CONNECTION;
 
     // ==== Client parser ====
     client_data->parser = parser_init(pop3_parser_configuration_get());

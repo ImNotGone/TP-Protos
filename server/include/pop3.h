@@ -16,6 +16,7 @@ typedef enum states {
     TRANSACTION,
     UPDATE,
     ERROR,
+    CLOSE_CONNECTION,
 } states_t;
 
 typedef struct client {
@@ -23,6 +24,11 @@ typedef struct client {
     parser_t parser;
 
     int client_sd;
+
+    size_t response_index;
+    char * response;
+
+    char * user;
 
     struct buffer buffer_in;
     uint8_t buffer_in_data[BUFFLEN];

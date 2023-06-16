@@ -37,13 +37,7 @@ static void increment_argc(struct parser_event * ret, const uint8_t c) {
 
 //TODO: revisar, esto porahi me hace quilombo
 static void reset_all(struct parser_event * ret, const uint8_t c) {
-    for (int i = 0; i < MAX_ARG_COUNT; i++) {
-        ret->args[i][0] = '\0';
-        ret->args_len[0] = 0;
-    }
-    ret->argc = 0;
-    ret->cmd_len = 0;
-    ret->cmd[0] = '\0';
+    pop3_parser_reset_event(ret);
     ret->type = PARSER_ERROR;
 }
 
@@ -115,3 +109,12 @@ struct parser_configuration * pop3_parser_configuration_get() {
     return &pop3_parser_configuration;
 }
 
+void pop3_parser_reset_event(struct parser_event * event) {
+    for (int i = 0; i < MAX_ARG_COUNT; i++) {
+        event->args[i][0] = '\0';
+        event->args_len[0] = 0;
+    }
+    event->argc = 0;
+    event->cmd_len = 0;
+    event->cmd[0] = '\0';
+}

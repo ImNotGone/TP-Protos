@@ -4,13 +4,14 @@
 #include <logger.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <resposes.h>
+#include <states/states-common.h>
 
 void greeting_on_arrival(unsigned state, struct selector_key * key) {
     client_t * client_data = CLIENT_DATA(key);
-
-    strcpy((char *)&client_data->buffer_out_data, GREETING_MSG);
-
-    buffer_write_adv(&client_data->buffer_out, strlen(GREETING_MSG));
+    client_data->response_index = 0;
+    client_data->response = RESPONSE_GREETING;
+    states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
 
     return;
 }
@@ -35,8 +36,10 @@ states_t greeting_write(struct selector_key * key) {
 
     buffer_read_adv(&client_data->buffer_out, bytes_sent);
 
-    // no pude mandar toda la linea
-    if(buffer_can_read(&client_data->buffer_out)) {
+    // Todavia me quedan cosas por procesar asi que me quedo en el state actual
+    // hasta que termine de mandar la linea
+    if(buffer_can_read(&client_data->buffer_out) || client_data->response[client_data->response_index] != '\0') {
+        states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
         return GREETING;
     }
 

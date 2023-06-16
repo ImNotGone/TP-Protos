@@ -6,7 +6,6 @@
 #include <string.h>
 #include <user-manager.h>
 
-#define USERS_FILE "users.txt"
 #define MAX_PASSWORD_LENGTH 32
 #define MAX_USERNAME_LENGTH 32
 #define DELIMITER ':'
@@ -32,10 +31,12 @@ static int save_users(user_manager_t user_manager, FILE *users_file);
 
 struct user_manager_cdt {
     user_list_t user_list;
+
+    char *users_file_path;
 };
 
 // Creates a new user manager
-user_manager_t user_manager_create() {
+user_manager_t user_manager_create(char* users_file_path) {
     user_manager_t new_user_manager = malloc(sizeof(struct user_manager_cdt));
 
     if (new_user_manager == NULL) {
@@ -43,9 +44,19 @@ user_manager_t user_manager_create() {
         return NULL;
     }
 
-    new_user_manager->user_list = NULL;
+    new_user_manager->users_file_path = malloc(strlen(users_file_path) + 1);
 
-    FILE *users_file = fopen(USERS_FILE, "r");
+    if (new_user_manager->users_file_path == NULL) {
+        free(new_user_manager);
+        errno = ENOMEM;
+        return NULL;
+    }
+
+    strcpy(new_user_manager->users_file_path, users_file_path);
+
+    // Loads the users from the users file
+    new_user_manager->user_list = NULL;
+    FILE *users_file = fopen(users_file_path, "r");
 
     if (users_file != NULL) {
         bool load_error = load_users(new_user_manager, users_file) == -1;
@@ -68,7 +79,7 @@ int user_manager_free(user_manager_t user_manager) {
     }
 
     // Creates or truncates the users file
-    FILE *users_file = fopen(USERS_FILE, "w");
+    FILE *users_file = fopen(user_manager->users_file_path, "w");
 
     if (users_file == NULL) {
         errno = EIO;

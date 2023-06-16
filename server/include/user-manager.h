@@ -14,6 +14,8 @@
 typedef struct user_manager_cdt* user_manager_t;
 
 // Creates a new user manager
+// Parameters:
+//   users_file_path - The path to the users file
 // Returns:
 //   A pointer to the new user manager on success, NULL on failure
 // Errors:
@@ -22,7 +24,7 @@ typedef struct user_manager_cdt* user_manager_t;
 // Notes:
 //   The user manager loads the users from the users file
 //   If the users file does not exist, no users are loaded
-user_manager_t user_manager_create();
+user_manager_t user_manager_create(char* users_file_path);
 
 // Frees the given user manager
 // Parameters:

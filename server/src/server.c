@@ -61,13 +61,6 @@ int main(void) {
         .handle_close = NULL,
     };
 
-    const fd_handler server_socket_ipv6_handler = {
-        .handle_read = pop3_server_accept,
-        .handle_write = NULL,
-        .handle_block = NULL,
-        .handle_close = NULL,
-    };
-
     const fd_handler monitor_socket_handler = {
             .handle_read = NULL, //TODO ver que funcion va aca
             .handle_write = NULL,
@@ -79,17 +72,11 @@ int main(void) {
 
     // Armo los sockets
     int server_socket = -1;
-    int server_socket_ipv6 = -1;
     int monitor_socket = -1;
 
     // === Request a socket ===
-    if ((server_socket = socket(AF_INET, SOCK_STREAM, TCP)) < 0) {
-        log(LOGGER_ERROR, "%s", "socket failed");
-        exit_value = EXIT_FAILURE;
-        goto exit;
-    }
-    if ((server_socket_ipv6 = socket(AF_INET6, SOCK_STREAM, TCP)) < 0) {
-        log(LOGGER_ERROR, "%s", "ipv6 socket failed");
+    if ((server_socket = socket(AF_INET6, SOCK_STREAM, TCP)) < 0) {
+        log(LOGGER_ERROR, "%s", "server socket failed");
         exit_value = EXIT_FAILURE;
         goto exit;
     }
@@ -109,26 +96,12 @@ int main(void) {
         goto exit;
     }
 
-    if ((setsockopt(server_socket_ipv6, SOL_SOCKET, SO_REUSEADDR,
-                  (const char *)&reuse, sizeof(reuse))) < 0 ||
-      (setsockopt(server_socket_ipv6,  SOL_IPV6, IPV6_V6ONLY,
-                  (const char *)&reuse, sizeof(reuse))) < 0) {
-        log(LOGGER_ERROR, "%s", "ipv6 setsockopt error");
-        exit_value = EXIT_FAILURE;
-        goto exit;
-    }
-
-    SAIN server_addr;
-    SAIN6 server_addr_ipv6;
+    SAIN6 server_addr;
     SAIN6 monitor_addr;
 
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port = htons(PORT);
-
-    server_addr_ipv6.sin6_family = AF_INET6;
-    server_addr_ipv6.sin6_addr = in6addr_any;
-    server_addr_ipv6.sin6_port = htons(PORT);
+    server_addr.sin6_family = AF_INET6;
+    server_addr.sin6_addr = in6addr_any;
+    server_addr.sin6_port = htons(PORT);
 
     monitor_addr.sin6_family= AF_INET6;
     monitor_addr.sin6_addr= in6addr_any;
@@ -136,23 +109,17 @@ int main(void) {
 
 
     if (bind(server_socket, (SA *)&server_addr, sizeof(server_addr)) < 0) {
-        log(LOGGER_ERROR, "%s", "bind failed");
-        exit_value = EXIT_FAILURE;
-        goto exit;
-    }
-
-    if (bind(server_socket_ipv6, (SA *)&server_addr_ipv6,
-           sizeof(server_addr_ipv6)) < 0) {if ((server_socket_ipv6 = socket(AF_INET6, SOCK_STREAM, TCP)) < 0) {
-            log(LOGGER_ERROR, "%s", "ipv6 socket failed");
+        if ((server_socket = socket(AF_INET6, SOCK_STREAM, TCP)) < 0) {
+            log(LOGGER_ERROR, "%s", "server socket failed");
             exit_value = EXIT_FAILURE;
             goto exit;
         }
-        log(LOGGER_ERROR, "%s", "ipv6 bind failed");
+        log(LOGGER_ERROR, "%s", "server bind failed");
         exit_value = EXIT_FAILURE;
         goto exit;
     }
 
-    if (bind(monitor_socket, (SA *)&monitor_addr, sizeof(monitor_addr)) < 0){
+    if (bind(monitor_socket, (SA *)&monitor_addr, sizeof(monitor_addr)) < 0) {
         if((monitor_socket = socket(AF_INET6, SOCK_STREAM, TCP))<0){
             log(LOGGER_ERROR, "%s", "monitor socket failed");
             exit_value = EXIT_FAILURE;
@@ -171,8 +138,8 @@ int main(void) {
         exit_value = EXIT_FAILURE;
         goto exit;
     }
-    if (listen(server_socket_ipv6, QUEUED_CONNECTIONS) < 0) {
-        log(LOGGER_ERROR, "%s", "ipv6 listen failed");
+    if (listen(server_socket, QUEUED_CONNECTIONS) < 0) {
+        log(LOGGER_ERROR, "%s", "server listen failed");
         exit_value = EXIT_FAILURE;
         goto exit;
     }
@@ -192,12 +159,6 @@ int main(void) {
     // monitor_t monitor;
 
     selector_status = selector_register(selector, server_socket, &server_socket_handler, OP_READ, NULL);
-    if(selector_status != SELECTOR_SUCCESS) {
-        exit_value = EXIT_FAILURE;
-        goto exit;
-    }
-
-    selector_status = selector_register(selector, server_socket_ipv6, &server_socket_ipv6_handler, OP_READ, NULL);
     if(selector_status != SELECTOR_SUCCESS) {
         exit_value = EXIT_FAILURE;
         goto exit;
@@ -224,9 +185,6 @@ exit:
     selector_close();
     if(server_socket >= 0) {
         close(server_socket);
-    }
-    if(server_socket_ipv6 >= 0) {
-        close(server_socket_ipv6);
     }
     return exit_value;
 }

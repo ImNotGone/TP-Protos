@@ -178,6 +178,12 @@ int user_manager_delete_user(user_manager_t user_manager, const char *username) 
         return -1;
     }
 
+    // If the user is locked, it cannot be deleted
+    if (current_user->is_locked) {
+        errno = EBUSY;
+        return -1;
+    }
+
     // Deletes the user
     if (previous_user == NULL) {
         user_manager->user_list = current_user->next;
@@ -285,6 +291,7 @@ static void free_user_list(user_list_t user_list) {
 }
 
 // Function to load the users from the users file
+// Users file is not closed by this function
 static int load_users(user_manager_t user_manager, FILE *users_file) {
     // TODO: implementar
 

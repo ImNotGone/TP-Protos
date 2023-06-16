@@ -56,6 +56,7 @@ int user_manager_create_user(user_manager_t user_manager, const char* username, 
 // Errors:
 //   EINVAL: Any of the parameters are NULL
 //   ENOENT: A user with the given username does not exist
+//   EBUSY: The users maildrop is locked, this means the user is logged in
 int user_manager_delete_user(user_manager_t user_manager, const char* username);
 
 // Logs a user into the user manager

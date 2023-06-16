@@ -46,7 +46,7 @@ static states_t handle_user(client_t * client_data, char * user, int user_len, c
     free(client_data->user);
     client_data->user = NULL;
     if(user_len != 0) {
-        client_data->user = calloc(user_len, sizeof(char));
+        client_data->user = calloc(user_len + 1, sizeof(char));
         strcpy(client_data->user, user);
     }
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);

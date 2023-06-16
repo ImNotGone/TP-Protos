@@ -99,20 +99,19 @@ message_manager_t message_manager_create(char *username, char *maildrop_parent_p
     // Load the data of the messages
     rewinddir(maildrop_dir);
     int message_index = 0;
+    message_manager->total_message_size = 0;
 
     while ((maildrop_entry = readdir(maildrop_dir)) != NULL) {
         if (maildrop_entry->d_type == DT_REG) {
 
             // Load message data
             message_manager->message_data_array[message_index].message_number = message_index + 1;
-            message_manager->message_data_array[message_index].message_size = maildrop_entry->d_reclen;
             message_manager->message_data_array[message_index].marked_for_deletion = false;
 
             // Load filename
             message_manager->message_filename_array[message_index] = malloc(strlen(maildrop_entry->d_name) + 1);
 
             if (message_manager->message_filename_array[message_index] == NULL) {
-                free(maildrop_path);
                 message_manager_free(message_manager);
                 errno = ENOMEM;
                 return NULL;
@@ -120,6 +119,20 @@ message_manager_t message_manager_create(char *username, char *maildrop_parent_p
 
             strcpy(message_manager->message_filename_array[message_index], maildrop_entry->d_name);
 
+            // Get size of the file
+            char message_path[strlen(maildrop_path) + strlen(maildrop_entry->d_name) + 1];
+            strcpy(message_path, maildrop_path);
+            strcat(message_path, maildrop_entry->d_name);
+
+            struct stat message_stat;
+            if (stat(message_path, &message_stat) == -1) {
+                message_manager_free(message_manager);
+                return NULL;
+            }
+
+            message_manager->message_data_array[message_index].message_size = message_stat.st_size;
+
+            message_manager->total_message_size += message_stat.st_size;
             message_index++;
         }
     }

@@ -3,6 +3,7 @@
 #include <commands.h>
 #include <sys/socket.h>
 #include <resposes.h>
+#include <pop3.h>
 
 inline void states_common_response_write(struct buffer * buffer, char * response, size_t * dim) {
     while (buffer_can_write(buffer) && response[*dim] != '\0') {
@@ -34,8 +35,7 @@ states_t states_common_read(struct selector_key * key, char * state, command_t *
 
     if(bytes_read == 0) {
         log(LOGGER_DEBUG, "recv() == 0 on state:%s from sd:%d", state, key->fd);
-        // TODO: close connection
-        return ERROR;
+        return CLOSE_CONNECTION;
     }
 
     log(LOGGER_DEBUG, "recv %ld bytes on state:%s from sd:%d", bytes_read, state, key->fd);

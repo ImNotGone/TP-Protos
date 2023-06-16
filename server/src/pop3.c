@@ -1,6 +1,7 @@
 #include <bits/stdint-uintn.h>
 #include <common.h>
 #include <selector.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -12,6 +13,7 @@
 #include <states/authorization.h>
 #include <states/transaction.h>
 #include <pop3.h>
+#include <parser.h>
 
 // TODO: fill handlers
 static const struct state_definition client_states[] = {
@@ -98,6 +100,8 @@ void pop3_server_accept(struct selector_key* key) {
 
     // TODO: fill client_data
 
+    client_data->closed = false;
+    client_data->user = NULL;
     client_data->client_sd = client_sd;
 
     // ==== Client state machine ====
@@ -126,17 +130,38 @@ void pop3_server_accept(struct selector_key* key) {
         return;
     }
 
+    // TODO: metric log client
+    // TODO: metric increment client count
+
     log(LOGGER_INFO, "client connection with sd:%d accepted", client_sd);
     return;
+}
+
+static void close_connection(struct selector_key * key) {
+    client_t * client_data = CLIENT_DATA(key);
+    // sino pongo esto el unregister fd me llama indefinidamente
+    if(client_data->closed == true) {
+        return;
+    }
+    client_data->closed = true;
+
+    // TODO: metric decrement client count
+    log(LOGGER_INFO, "client with sd:%d disconected", client_data->client_sd);
+
+    selector_unregister_fd(key->s, client_data->client_sd);
+    close(client_data->client_sd);
+    free(client_data->user);
+    parser_destroy(client_data->parser);
+    free(client_data);
 }
 
 static void pop3_client_read(struct selector_key * key) {
     client_t * client_data = CLIENT_DATA(key);
     state_machine_t * state_machine = &client_data->state_machine;
     const states_t st = state_machine_handler_read(state_machine, key);
-    if(st == ERROR) {
+    if(st == ERROR || st == CLOSE_CONNECTION) {
         log(LOGGER_ERROR, "error handling read for client with sd:%d", client_data->client_sd);
-        // TODO: close connection
+        close_connection(key);
     }
 }
 
@@ -144,9 +169,9 @@ static void pop3_client_write(struct selector_key * key) {
     client_t * client_data = CLIENT_DATA(key);
     state_machine_t * state_machine = &client_data->state_machine;
     const states_t st = state_machine_handler_write(state_machine, key);
-    if(st == ERROR) {
+    if(st == ERROR || st == CLOSE_CONNECTION) {
         log(LOGGER_ERROR, "error handling write for client with sd:%d", client_data->client_sd);
-        // TODO: close connection
+        close_connection(key);
     }
 }
 
@@ -156,7 +181,7 @@ static void pop3_client_block(struct selector_key * key) {
     const states_t st = state_machine_handler_block(state_machine, key);
     if(st == ERROR) {
         log(LOGGER_ERROR, "error handling block for client with sd:%d", client_data->client_sd);
-        // TODO: close connection
+        close_connection(key);
     }
 }
 
@@ -165,5 +190,5 @@ static void pop3_client_close(struct selector_key * key) {
     state_machine_t * state_machine = &client_data->state_machine;
     state_machine_handler_close(state_machine, key);
     log(LOGGER_INFO, "closing client with sd:%d", client_data->client_sd);
-    // TODO: close connection
+    close_connection(key);
 }

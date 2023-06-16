@@ -29,6 +29,8 @@ typedef struct client {
 
     char * user;
 
+    bool closed;
+
     struct buffer buffer_in;
     uint8_t buffer_in_data[BUFFSIZE];
 

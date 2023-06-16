@@ -30,7 +30,8 @@ static command_t commands[] = {
     {.name = "quit", .command_handler = handle_quit},
 };
 
-static int cant_commands = 3;
+#define N(x) (sizeof(x)/sizeof((x)[0]))
+static int cant_commands = N(commands);
 
 states_t authorization_read(struct selector_key * key) {
     return states_common_read(key, "authorization", commands, cant_commands);
@@ -54,7 +55,7 @@ static states_t handle_user(client_t * client_data, char * user, int user_len, c
 }
 
 static states_t handle_pass(client_t * client_data, char * pass, int unused1, char * unused2, int unused3) {
-    bool authenticated = false;
+    bool authenticated = true;
     client_data->response_index = 0;
     // TODO: call method to check if authenticated
     if(authenticated) {

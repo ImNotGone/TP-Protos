@@ -158,7 +158,7 @@ int main(void) {
     log(LOGGER_INFO, "Attending a maximum of %d clients", BACKLOG);
 
     // TODO: init monitor
-    // monitor_t monitor;
+    monitor_t monitor = monitor_new(MAX_USERS, MAX_CONNS, QUEUED_CONNECTIONS);
 
     selector_status = selector_register(selector, server_socket, &server_socket_handler, OP_READ, NULL);
     if(selector_status != SELECTOR_SUCCESS) {

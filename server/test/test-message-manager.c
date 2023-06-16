@@ -49,15 +49,38 @@ int main() {
     // ============== Expected values ==============
     char *maildrop_parent_path = "./test/resources/maildrops/";
     char *maildrop_name = "pepe";
+    char *maildrop_path = "./test/resources/maildrops/pepe/";
 
-    // Get all the bytes occupied by 1.txt & 2.txt
-    int file_1_size = 3297;
-    int file_2_size = 3397;
-
-    int total_size = file_1_size + file_2_size;
+    char *file_1_path = "./test/resources/maildrops/pepe/1.txt";
+    char *file_2_path = "./test/resources/maildrops/pepe/2.txt";
+    char *file_3_path = "./test/resources/maildrops/pepe/dummy.txt";
 
     // Create a dummy file to be removed later
     fopen("./test/resources/maildrops/pepe/dummy.txt", "w");
+
+    // Get all the bytes occupied by 1.txt, 2.txt and dummy.txt
+    struct stat file_1_stat, file_2_stat, file_3_stat;
+
+    if (stat(file_1_path, &file_1_stat) == -1) {
+        perror("Failed to get file status for 1.txt");
+        return -1;
+    }
+
+    if (stat(file_2_path, &file_2_stat) == -1) {
+        perror("Failed to get file status for 2.txt");
+        return -1;
+    }
+
+    if (stat(file_3_path, &file_3_stat) == -1) {
+        perror("Failed to get file status for dummy.txt");
+        return -1;
+    }
+
+    int file_1_size = file_1_stat.st_size;
+    int file_2_size = file_2_stat.st_size;
+    int file_3_size = file_3_stat.st_size;
+
+    int total_size = file_1_size + file_2_size + file_3_size;
 
     // ============= Test message manager =============
 
@@ -66,7 +89,7 @@ int main() {
 
     // Check if the message manager was created correctly
     assert(mm != NULL);
-    assert(strcmp(mm->maildrop_path, "./test/resources/maildrops/pepe/") == 0);
+    assert(strcmp(mm->maildrop_path, maildrop_path) == 0);
     assert(mm->message_array_size == 3);
     assert(mm->total_message_size == total_size);
     assert(mm->message_count == 3);
@@ -84,7 +107,7 @@ int main() {
     message_data_t *message_data = message_manager_get_message_data(mm, 1);
 
     assert(message_data->message_size == file_1_size || message_data->message_size == file_2_size ||
-           message_data->message_size == 0);
+           message_data->message_size == file_3_size);
     assert(message_data->message_number == 1);
     assert(message_data->marked_for_deletion == false);
 
@@ -93,7 +116,7 @@ int main() {
     message_data = message_manager_get_message_data(mm, 2);
 
     assert(message_data->message_size == file_1_size || message_data->message_size == file_2_size ||
-           message_data->message_size == 0);
+           message_data->message_size == file_3_size);
     assert(message_data->message_number == 2);
     assert(message_data->marked_for_deletion == false);
 
@@ -102,7 +125,7 @@ int main() {
     message_data = message_manager_get_message_data(mm, 3);
 
     assert(message_data->message_size == file_1_size || message_data->message_size == file_2_size ||
-           message_data->message_size == 0);
+           message_data->message_size == file_3_size);
     assert(message_data->message_number == 3);
     assert(message_data->marked_for_deletion == false);
 
@@ -119,10 +142,10 @@ int main() {
     for (int i = 0; i < message_data_list_size; i++) {
         assert(message_data_list[i].message_number == i + 1);
         assert(message_data_list[i].message_size == file_1_size || message_data_list[i].message_size == file_2_size ||
-               message_data_list[i].message_size == 0);
+               message_data_list[i].message_size == file_3_size);
         assert(message_data_list[i].marked_for_deletion == false);
 
-        if (message_data_list[i].message_size == 0) {
+        if (message_data_list[i].message_size == file_3_size) {
             dummy_message_number = message_data_list[i].message_number;
         }
     }
@@ -143,15 +166,12 @@ int main() {
     assert(fd_2 != fd_3);
 
     // Check if the file descriptor refers to the correct file
-    assert(is_fd_same_file(fd_1, "./test/resources/maildrops/pepe/1.txt") ||
-           is_fd_same_file(fd_1, "./test/resources/maildrops/pepe/2.txt") ||
-           is_fd_same_file(fd_1, "./test/resources/maildrops/pepe/dummy.txt"));
-    assert(is_fd_same_file(fd_2, "./test/resources/maildrops/pepe/2.txt") ||
-           is_fd_same_file(fd_2, "./test/resources/maildrops/pepe/1.txt") ||
-           is_fd_same_file(fd_2, "./test/resources/maildrops/pepe/dummy.txt"));
-    assert(is_fd_same_file(fd_3, "./test/resources/maildrops/pepe/dummy.txt") ||
-           is_fd_same_file(fd_3, "./test/resources/maildrops/pepe/1.txt") ||
-           is_fd_same_file(fd_3, "./test/resources/maildrops/pepe/2.txt"));
+    assert(is_fd_same_file(fd_1, file_1_path) || is_fd_same_file(fd_1, file_2_path) ||
+           is_fd_same_file(fd_1, file_3_path));
+    assert(is_fd_same_file(fd_2, file_1_path) || is_fd_same_file(fd_2, file_2_path) ||
+           is_fd_same_file(fd_2, file_3_path));
+    assert(is_fd_same_file(fd_3, file_1_path) || is_fd_same_file(fd_3, file_2_path) ||
+           is_fd_same_file(fd_3, file_3_path));
 
     close(fd_1);
     close(fd_2);

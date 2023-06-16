@@ -11,79 +11,6 @@
 
 #define MAILDIR_PATH "/var/mail/"
 
-// ============ Locked user list ============
-typedef struct locked_user_list_cdt *locked_user_list_t;
-struct locked_user_list_cdt {
-    char *username;
-
-    struct locked_user_list_cdt *next;
-};
-
-locked_user_list_t locked_user_list = NULL;
-
-// Function to add a user to the locked user list
-static int add_locked_user(char *username) {
-    locked_user_list_t new_locked_user = malloc(sizeof(struct locked_user_list_cdt));
-
-    if (new_locked_user == NULL) {
-        errno = ENOMEM;
-        return -1;
-    }
-
-    new_locked_user->username = username;
-    new_locked_user->next = NULL;
-
-    if (locked_user_list == NULL) {
-        locked_user_list = new_locked_user;
-    } else {
-        locked_user_list_t current_locked_user = locked_user_list;
-        while (current_locked_user->next != NULL) {
-            current_locked_user = current_locked_user->next;
-        }
-
-        current_locked_user->next = new_locked_user;
-    }
-
-    return 0;
-}
-
-// Function to remove a user from the locked user list
-static void remove_locked_user(char *username) {
-    locked_user_list_t current_locked_user = locked_user_list;
-    locked_user_list_t previous_locked_user = NULL;
-
-    while (current_locked_user != NULL) {
-        if (strcmp(current_locked_user->username, username) == 0) {
-            if (previous_locked_user == NULL) {
-                locked_user_list = current_locked_user->next;
-            } else {
-                previous_locked_user->next = current_locked_user->next;
-            }
-
-            free(current_locked_user);
-            break;
-        }
-
-        previous_locked_user = current_locked_user;
-        current_locked_user = current_locked_user->next;
-    }
-}
-
-// Function to check if a user is in the locked user list
-static bool is_user_locked(char *username) {
-    locked_user_list_t current_locked_user = locked_user_list;
-
-    while (current_locked_user != NULL) {
-        if (strcmp(current_locked_user->username, username) == 0) {
-            return true;
-        }
-
-        current_locked_user = current_locked_user->next;
-    }
-
-    return false;
-}
-
 // ========== Message manager ==========
 struct message_manager_cdt {
     char *username;
@@ -99,12 +26,6 @@ struct message_manager_cdt {
 
 // Function to create a new message manager
 message_manager_t message_manager_create(char *username) {
-
-    // Check if the user is locked
-    if (is_user_locked(username)) {
-        errno = EBUSY;
-        return NULL;
-    }
 
     message_manager_t message_manager = malloc(sizeof(struct message_manager_cdt));
 
@@ -216,13 +137,6 @@ message_manager_t message_manager_create(char *username) {
 
     closedir(maildrop_dir);
 
-    // Lock the user
-    if (add_locked_user(username) == -1) {
-        free(maildrop_path);
-        message_manager_free(message_manager);
-        return NULL;
-    }
-
     return message_manager;
 }
 
@@ -231,11 +145,6 @@ void message_manager_free(message_manager_t message_manager) {
 
     if (message_manager == NULL) {
         return;
-    }
-
-    // Unlock the user
-    if (message_manager->username != NULL) {
-        remove_locked_user(message_manager->username);
     }
 
     // Free the data arrays

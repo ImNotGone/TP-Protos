@@ -1,6 +1,10 @@
 #ifndef USER_MANAGER_H
 #define USER_MANAGER_H
 
+#define MAX_PASSWORD_LENGTH 32
+#define MAX_USERNAME_LENGTH 32
+#define DELIMITER ':'
+
 // The user manager 
 // A user manager is responsible for managing users in the pop3 server
 // It is responsible for creating, deleting, and validating users

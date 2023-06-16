@@ -6,10 +6,6 @@
 #include <string.h>
 #include <user-manager.h>
 
-#define MAX_PASSWORD_LENGTH 32
-#define MAX_USERNAME_LENGTH 32
-#define DELIMITER ':'
-
 // ============ User list ============
 typedef struct user_list_cdt *user_list_t;
 struct user_list_cdt {

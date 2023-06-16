@@ -9,6 +9,7 @@
 #define USERS_FILE "users.txt"
 #define MAX_PASSWORD_LENGTH 32
 #define MAX_USERNAME_LENGTH 32
+#define DELIMITER ':'
 
 // ============ User list ============
 typedef struct user_list_cdt *user_list_t;
@@ -34,10 +35,6 @@ struct user_manager_cdt {
 };
 
 // Creates a new user manager
-// Returns:
-//   A pointer to the new user manager on success, NULL on failure
-// Notes:
-//   The user manager loads the users from the users file
 user_manager_t user_manager_create() {
     user_manager_t new_user_manager = malloc(sizeof(struct user_manager_cdt));
 
@@ -52,15 +49,13 @@ user_manager_t user_manager_create() {
 
     if (users_file != NULL) {
         bool load_error = load_users(new_user_manager, users_file) == -1;
+        fclose(users_file);
 
         if (load_error) {
             free_user_list(new_user_manager->user_list);
             free(new_user_manager);
-            fclose(users_file);
             return NULL;
         }
-
-        fclose(users_file);
     }
 
     return new_user_manager;
@@ -110,6 +105,14 @@ int user_manager_create_user(user_manager_t user_manager, const char *username, 
         return -1;
     }
 
+    // Checks if the username and password do not contain the delimiter nor
+    // whitespace
+    if (strchr(username, DELIMITER) != NULL || strchr(password, DELIMITER) != NULL ||
+        strpbrk(username, " \t") != NULL || strpbrk(password, " \t") != NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+
     // Checks if the user already exists
     user_list_t current_user = user_manager->user_list;
 
@@ -155,11 +158,6 @@ int user_manager_create_user(user_manager_t user_manager, const char *username, 
 }
 
 // Deletes a user from the user manager
-// Parameters:
-//   user_manager - The user manager
-//   username - The username of the user to delete
-// Returns:
-//   0 on success, -1 on failure
 int user_manager_delete_user(user_manager_t user_manager, const char *username) {
     if (user_manager == NULL || username == NULL) {
         errno = EINVAL;
@@ -281,7 +279,6 @@ int user_manager_logout(user_manager_t user_manager, const char *username) {
     return 0;
 }
 
-
 // ============ Private functions ============
 
 // Function to free the user list
@@ -298,15 +295,124 @@ static void free_user_list(user_list_t user_list) {
     free(user_list);
 }
 
+// Function to parse a line from the users file
+static int parse_line(char *line, char **username, char **password) {
+
+    // Ignore whitespace
+    while (*line == ' ' || *line == '\t') {
+        line++;
+    }
+
+    // If the line is empty ignore it
+    if (*line == '\n' || *line == '\0') {
+        return -1;
+    }
+
+    // Check username is not empty
+    if (*line == DELIMITER || *line == '\n' || *line == '\0') {
+        return -1;
+    }
+
+    // Find the username
+    *username = line;
+    int username_length = 1;
+    while (*line != DELIMITER && *line != '\n' && *line != '\0' && username_length <= MAX_USERNAME_LENGTH) {
+        line++;
+        username_length++;
+    }
+
+    // Check if the username is too long
+    if (username_length > MAX_USERNAME_LENGTH) {
+        return -1;
+    }
+
+    // If there is no delimiter after the username then the format is invalid
+    if (*line != DELIMITER) {
+        return -1;
+    }
+
+    // Null terminate the username
+    *line = '\0';
+
+    // Ignore whitespace
+    line++;
+    while (*line == ' ' || *line == '\t') {
+        line++;
+    }
+
+    // Check password is not empty
+    if (*line == DELIMITER || *line == '\n' || *line == '\0') {
+        return -1;
+    }
+
+    // Find the password
+    *password = line;
+    int password_length = 1;
+    while (*line != DELIMITER && *line != '\n' && *line != '\0' && password_length <= MAX_PASSWORD_LENGTH) {
+        line++;
+        password_length++;
+    }
+
+    // Check if the password is too long
+    if (password_length > MAX_PASSWORD_LENGTH) {
+        return -1;
+    }
+
+    // Null terminate the password
+    *line = '\0';
+
+    return 0;
+}
+
 // Function to load the users from the users file
 // Users file is not closed by this function
 static int load_users(user_manager_t user_manager, FILE *users_file) {
-    // TODO: implementar
+    char line[MAX_USERNAME_LENGTH + MAX_PASSWORD_LENGTH + 2];
+    char *username, *password;
+
+    while (fgets(line, sizeof(line), users_file) != NULL) {
+        // Parse the username and password from each line
+        username = malloc(MAX_USERNAME_LENGTH + 1);
+        password = malloc(MAX_PASSWORD_LENGTH + 1);
+
+        if (username == NULL || password == NULL) {
+            errno = ENOMEM;
+            return -1;
+        }
+
+        bool parse_error = parse_line(line, &username, &password) == -1;
+
+        if (parse_error) {
+            free(username);
+            free(password);
+            errno = EINVAL;
+            return -1;
+        }
+
+        // Create a new user node
+        user_list_t new_user = malloc(sizeof(struct user_list_cdt));
+        if (new_user == NULL) {
+            free(username);
+            free(password);
+            errno = ENOMEM;
+            return -1;
+        }
+
+        // Set the username and password
+        new_user->username = username;
+        new_user->password = password;
+        new_user->is_locked = false;
+
+        // Add the user to the front of the list
+        new_user->next = user_manager->user_list;
+        user_manager->user_list = new_user;
+    }
 
     return 0;
 }
 
 // Function to save the users to the users file
+// Users file is not closed by this function
 static int save_users(user_manager_t user_manager, FILE *users_file) {
     // TODO: implementar
 

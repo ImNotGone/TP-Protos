@@ -18,8 +18,10 @@ typedef struct user_manager_cdt* user_manager_t;
 //   A pointer to the new user manager on success, NULL on failure
 // Errors:
 //   ENOMEM: Not enough memory to create the user manager
+//   EINVAL: The users file is invalid
 // Notes:
 //   The user manager loads the users from the users file
+//   If the users file does not exist, no users are loaded
 user_manager_t user_manager_create();
 
 // Frees the given user manager

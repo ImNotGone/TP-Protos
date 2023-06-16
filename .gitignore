@@ -1,3 +1,4 @@
 *.o
 pop3_server
 .idea
+*.gdb_history

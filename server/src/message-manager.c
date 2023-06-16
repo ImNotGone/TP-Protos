@@ -241,7 +241,8 @@ int message_manager_get_message_content(message_manager_t message_manager, int m
     }
 
     // Get the path of the message
-    int message_path_length = strlen(message_manager->maildrop_path) + strlen(message_manager->message_filename_array[message_number - 1]) + 1;
+    int message_path_length = strlen(message_manager->maildrop_path) +
+                              strlen(message_manager->message_filename_array[message_number - 1]) + 1;
 
     char message_path[message_path_length];
 
@@ -298,7 +299,7 @@ int message_manager_delete_marked_messages(message_manager_t message_manager) {
     // Delete all the files of the messages marked for deletion
     bool errorHappened = false;
 
-    for (int i = 0; i < message_manager->message_count; i++) {
+    for (int i = 0; i < message_manager->message_array_size; i++) {
         if (message_manager->message_data_array[i].marked_for_deletion) {
             char *filename = message_manager->message_filename_array[i];
             char filepath[strlen(message_manager->maildrop_path) + strlen(filename) + 1];
@@ -308,7 +309,7 @@ int message_manager_delete_marked_messages(message_manager_t message_manager) {
 
             if (remove(filepath) == -1) {
                 errorHappened = true;
-            } 
+            }
         }
     }
 

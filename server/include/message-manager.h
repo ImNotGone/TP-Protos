@@ -20,13 +20,14 @@ typedef struct message_manager_cdt* message_manager_t;
 // Parameters:
 //   username: The username of the maildrop to create the message manager for
 //             must be null terminated
+//   maildrop_parent_path: The path of the directory containing all maildrops
 // Returns:
 //   A pointer to a message_manager_t struct on success, NULL on failure
 // Errors:
 //   ENOMEM: Insufficient memory to create the message manager
 //   ENOENT: The maildrop directory does not exist
 //   ENOTDIR: The maildrop path is not a directory
-message_manager_t message_manager_create(char *username);
+message_manager_t message_manager_create(char *username, char *maildrop_parent_path);
 
 // Free the given message manager
 // Parameters:
@@ -72,13 +73,12 @@ message_data_t *message_manager_get_message_data_list(message_manager_t message_
 //   message_manager: The message manager
 //   message_number: The message number to get the content for
 // Returns:
-//   The file descriptor for the message content on success, -1 on failure
+//   The file descriptor for the message content
 //   The file descriptor must be closed by the caller
 // Errors:
 //   EINVAL: message_number was less than 1 or greater than the number of messages in the maildrop
 //           or message_manager was NULL
 //   ENOENT: The message is marked for deletion
-//   ENOMEM: Insufficient memory to allocate the path to the message file
 //   Any errno value set by open()
 int message_manager_get_message_content(message_manager_t message_manager, int message_number);
 
@@ -114,7 +114,6 @@ int message_manager_reset_deleted_flag(message_manager_t message_manager);
 //   If a file deletion fails, other messages will still be deleted
 // Errors:
 //   EINVAL: message_manager was NULL
-//   ENOMEM: Insufficient memory to allocate the path to the message file
 //   EIO: An error occurred while deleting a message file
 int message_manager_delete_marked_messages(message_manager_t message_manager);
 

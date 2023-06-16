@@ -1,8 +1,6 @@
 #ifndef MESSAGE_MANAGER_H
 #define MESSAGE_MANAGER_H
 
-#include <pop3.h>
-
 typedef struct message_data_t {
     int message_number;
     int message_size;

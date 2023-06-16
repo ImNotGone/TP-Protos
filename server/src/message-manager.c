@@ -1,13 +1,13 @@
 #define _GNU_SOURCE
 
-#include <pop3.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <message-manager.h>
+#include <pop3.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <stdio.h>
 
 // ========== Message manager ==========
 struct message_manager_cdt {
@@ -37,7 +37,7 @@ message_manager_t message_manager_create(char *username, char *maildrop_parent_p
     char *maildrop_path = malloc(strlen(maildrop_parent_path) + strlen(username) + 2);
 
     if (maildrop_path == NULL) {
-        message_manager_free(message_manager);
+        free(message_manager);
         errno = ENOMEM;
         return NULL;
     }
@@ -49,16 +49,18 @@ message_manager_t message_manager_create(char *username, char *maildrop_parent_p
     struct stat maildrop_stat;
     if (stat(maildrop_path, &maildrop_stat) == -1) {
         free(maildrop_path);
-        message_manager_free(message_manager);
+        free(message_manager);
         return NULL;
     }
 
     if (!S_ISDIR(maildrop_stat.st_mode)) {
         free(maildrop_path);
-        message_manager_free(message_manager);
+        free(message_manager);
         errno = ENOTDIR;
         return NULL;
     }
+
+    message_manager->maildrop_path = maildrop_path;
 
     // Load all the data of the messages in the maildrop
     message_manager->message_array_size = 0;
@@ -67,8 +69,8 @@ message_manager_t message_manager_create(char *username, char *maildrop_parent_p
     DIR *maildrop_dir = opendir(maildrop_path);
 
     if (maildrop_dir == NULL) {
-        free(maildrop_path);
-        message_manager_free(message_manager);
+        free(message_manager->maildrop_path);
+        free(message_manager);
         return NULL;
     }
 
@@ -76,7 +78,6 @@ message_manager_t message_manager_create(char *username, char *maildrop_parent_p
     while ((maildrop_entry = readdir(maildrop_dir)) != NULL) {
         if (maildrop_entry->d_type == DT_REG) {
             message_manager->message_array_size++;
-            message_manager->total_message_size += maildrop_entry->d_reclen;
         }
     }
 
@@ -87,8 +88,10 @@ message_manager_t message_manager_create(char *username, char *maildrop_parent_p
     message_manager->message_filename_array = malloc(sizeof(char *) * message_manager->message_array_size);
 
     if (message_manager->message_data_array == NULL || message_manager->message_filename_array == NULL) {
-        free(maildrop_path);
-        message_manager_free(message_manager);
+        free(message_manager->maildrop_path);
+        free(message_manager->message_data_array);
+        free(message_manager->message_filename_array);
+        free(message_manager);
         errno = ENOMEM;
         return NULL;
     }

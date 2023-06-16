@@ -1,9 +1,11 @@
 #define _GNU_SOURCE
+#include <dirent.h>
 #include <errno.h>
 #include <pop3.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <user-manager.h>
 
 // ============ User list ============
@@ -22,6 +24,7 @@ static void free_user_list(user_list_t user_list);
 
 static int load_users(user_manager_t user_manager, FILE *users_file);
 static int save_users(user_manager_t user_manager, FILE *users_file);
+static int delete_directory(const char *directory_path);
 
 // ============ User manager ============
 
@@ -29,10 +32,11 @@ struct user_manager_cdt {
     user_list_t user_list;
 
     char *users_file_path;
+    char *maildrop_parent_path;
 };
 
 // Creates a new user manager
-user_manager_t user_manager_create(char* users_file_path) {
+user_manager_t user_manager_create(char *users_file_path, char *maildrop_parent_path) {
     user_manager_t new_user_manager = malloc(sizeof(struct user_manager_cdt));
 
     if (new_user_manager == NULL) {
@@ -49,6 +53,15 @@ user_manager_t user_manager_create(char* users_file_path) {
     }
 
     strcpy(new_user_manager->users_file_path, users_file_path);
+
+    new_user_manager->maildrop_parent_path = malloc(strlen(maildrop_parent_path) + 1);
+
+    if (new_user_manager->maildrop_parent_path == NULL) {
+        free(new_user_manager->users_file_path);
+        free(new_user_manager);
+        errno = ENOMEM;
+        return NULL;
+    }
 
     // Loads the users from the users file
     new_user_manager->user_list = NULL;
@@ -156,6 +169,22 @@ int user_manager_create_user(user_manager_t user_manager, const char *username, 
 
     new_user->is_locked = false;
 
+    // Creates the user's maildrop
+    int maildrop_path_length = strlen(user_manager->maildrop_parent_path) + strlen(username) + 1;
+    char maildrop_path[maildrop_path_length];
+
+    strcpy(maildrop_path, user_manager->maildrop_parent_path);
+    strcat(maildrop_path, username);
+
+    if (mkdir(maildrop_path, 0700) == -1) {
+        free(new_user->username);
+        free(new_user->password);
+        free(new_user);
+
+        errno = EIO;
+        return -1;
+    }
+
     // Adds the user to the front of the user list
     new_user->next = user_manager->user_list;
     user_manager->user_list = new_user;
@@ -192,6 +221,18 @@ int user_manager_delete_user(user_manager_t user_manager, const char *username) 
     // If the user is locked, it cannot be deleted
     if (current_user->is_locked) {
         errno = EBUSY;
+        return -1;
+    }
+
+    // Deletes the user's maildrop
+    int maildrop_path_length = strlen(user_manager->maildrop_parent_path) + strlen(username) + 1;
+    char maildrop_path[maildrop_path_length];
+
+    strcpy(maildrop_path, user_manager->maildrop_parent_path);
+    strcat(maildrop_path, username);
+
+    if (delete_directory(maildrop_path) == -1) {
+        errno = EIO;
         return -1;
     }
 
@@ -421,9 +462,53 @@ static int save_users(user_manager_t user_manager, FILE *users_file) {
         if (fprintf(users_file, "%s%c%s\n", current_user->username, DELIMITER, current_user->password) < 0) {
             return -1;
         }
-        
 
         current_user = current_user->next;
+    }
+
+    return 0;
+}
+
+// Function to delete a directory and all its contents
+// The directory should not contain any subdirectories
+int delete_directory(const char *directory_path) {
+
+    DIR *dir = opendir(directory_path);
+    if (dir == NULL) {
+        return -1;
+    }
+
+    struct dirent *entry;
+    struct stat file_stat;
+
+    // Delete files within the directory
+    while ((entry = readdir(dir)) != NULL) {
+
+        int file_path_length = strlen(directory_path) + strlen(entry->d_name) + 2;
+        char file_path[file_path_length];
+
+        strcpy(file_path, directory_path);
+        strcat(file_path, "/");
+        strcat(file_path, entry->d_name);
+
+        if (lstat(file_path, &file_stat) == -1) {
+            closedir(dir);
+            return -1;
+        }
+
+        if (S_ISREG(file_stat.st_mode)) {
+            if (unlink(file_path) == -1) {
+                closedir(dir);
+                return -1;
+            }
+        }
+    }
+
+    closedir(dir);
+
+    // Delete the empty directory itself
+    if (rmdir(directory_path) == -1) {
+        return -1;
     }
 
     return 0;

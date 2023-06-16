@@ -13,6 +13,8 @@
 // This file is read when the user manager is created and written to when the user manager is freed
 // If the file does not exist when the user manager is created, no users are loaded
 // If the file does not exist when the user manager is freed, the file is created and the users are written to it
+// When a user is created, the user manager creates a maildrop for the user
+// When a user is deleted, the user manager deletes the users maildrop
 // The user manager is created when the server is started and freed when the server is stopped
 
 typedef struct user_manager_cdt* user_manager_t;
@@ -20,6 +22,7 @@ typedef struct user_manager_cdt* user_manager_t;
 // Creates a new user manager
 // Parameters:
 //   users_file_path - The path to the users file
+//   maildrop_parent_path - The path to the maildrop parent directory, it includes the trailing '/'
 // Returns:
 //   A pointer to the new user manager on success, NULL on failure
 // Errors:
@@ -28,7 +31,7 @@ typedef struct user_manager_cdt* user_manager_t;
 // Notes:
 //   The user manager loads the users from the users file
 //   If the users file does not exist, no users are loaded
-user_manager_t user_manager_create(char* users_file_path);
+user_manager_t user_manager_create(char* users_file_path, char* maildrop_parent_path);
 
 // Frees the given user manager
 // Parameters:
@@ -55,6 +58,10 @@ int user_manager_free(user_manager_t user_manager);
 //           The username or password are too long
 //   EEXIST: A user with the given username already exists
 //   ENOMEM: Not enough memory to create the user
+//   EIO: The users maildrop could not be created
+// Notes:
+//   The user manager creates a maildrop for the user
+//   this maildrop is located in the maildrop parent directory / username
 int user_manager_create_user(user_manager_t user_manager, const char* username, const char* password);
 
 // Deletes a user from the user manager
@@ -67,6 +74,10 @@ int user_manager_create_user(user_manager_t user_manager, const char* username, 
 //   EINVAL: Any of the parameters are NULL
 //   ENOENT: A user with the given username does not exist
 //   EBUSY: The users maildrop is locked, this means the user is logged in
+//   EIO: The users maildrop could not be deleted
+// Notes:
+//   The user manager deletes the users maildrop
+//   if the maildrop could not be deleted, the user is not deleted
 int user_manager_delete_user(user_manager_t user_manager, const char* username);
 
 // Logs a user into the user manager

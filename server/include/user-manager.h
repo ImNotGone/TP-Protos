@@ -43,6 +43,8 @@ int user_manager_free(user_manager_t user_manager);
 //   0 on success, -1 on failure
 // Errors:
 //   EINVAL: Any of the parameters are NULL
+//           The username or password are empty
+//           The username or password are too long
 //   EEXIST: A user with the given username already exists
 //   ENOMEM: Not enough memory to create the user
 int user_manager_create_user(user_manager_t user_manager, const char* username, const char* password);

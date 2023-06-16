@@ -7,6 +7,8 @@
 #include <user-manager.h>
 
 #define USERS_FILE "users.txt"
+#define MAX_PASSWORD_LENGTH 32
+#define MAX_USERNAME_LENGTH 32
 
 // ============ User list ============
 typedef struct user_list_cdt *user_list_t;
@@ -98,6 +100,12 @@ int user_manager_free(user_manager_t user_manager) {
 // Creates a user in the user manager
 int user_manager_create_user(user_manager_t user_manager, const char *username, const char *password) {
     if (user_manager == NULL || username == NULL || password == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (strlen(username) > MAX_USERNAME_LENGTH || strlen(password) > MAX_PASSWORD_LENGTH || strlen(username) == 0 ||
+        strlen(password) == 0) {
         errno = EINVAL;
         return -1;
     }

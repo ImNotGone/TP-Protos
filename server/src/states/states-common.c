@@ -2,12 +2,19 @@
 #include <logger.h>
 #include <commands.h>
 #include <sys/socket.h>
+#include <resposes.h>
 
 inline void states_common_response_write(struct buffer * buffer, char * response, size_t * dim) {
     while (buffer_can_write(buffer) && response[*dim] != '\0') {
         buffer_write(buffer, response[*dim]);
         (*dim)++;
     }
+}
+
+static void unknown_command(client_t * client_data) {
+    client_data->response_index = 0;
+    client_data->response = RESPONSE_UNKNOWN;
+    states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
 }
 
 states_t states_common_read(struct selector_key * key, char * state, command_t * commands, int cant_commands) {
@@ -46,7 +53,10 @@ states_t states_common_read(struct selector_key * key, char * state, command_t *
 
             if(command == NULL) {
                 log(LOGGER_ERROR, "command not supported on state:%s for sd:%d", state, key->fd);
-                return ERROR;
+                unknown_command(client_data);
+                parser_reset(client_data->parser);
+                pop3_parser_reset_event(parser_event);
+                return current_state;
             }
 
             states_t next_state =  command->command_handler(client_data, (char*)parser_event->args[0], parser_event->args_len[0], (char *)parser_event->args[1], parser_event->args_len[1]);
@@ -111,7 +121,10 @@ states_t states_common_write(struct selector_key * key, char * state, command_t 
 
             if(command == NULL) {
                 log(LOGGER_ERROR, "command not supported for sd:%d", key->fd);
-                return ERROR;
+                unknown_command(client_data);
+                parser_reset(client_data->parser);
+                pop3_parser_reset_event(parser_event);
+                return current_state;
             }
 
             states_t next_state =  command->command_handler(client_data, (char*)parser_event->args[0], parser_event->args_len[0], (char *)parser_event->args[1], parser_event->args_len[1]);

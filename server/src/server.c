@@ -91,7 +91,14 @@ int main(void) {
     int reuse = 1;
     if ((setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse,
                   sizeof(reuse))) < 0) {
-        log(LOGGER_ERROR, "%s", "setsockopt error");
+        log(LOGGER_ERROR, "%s", "server setsockopt error");
+        exit_value = EXIT_FAILURE;
+        goto exit;
+    }
+
+    if ((setsockopt(monitor_socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&reuse,
+                  sizeof(reuse))) < 0) {
+        log(LOGGER_ERROR, "%s", "monitor setsockopt error");
         exit_value = EXIT_FAILURE;
         goto exit;
     }
@@ -133,11 +140,6 @@ int main(void) {
 
     // QUEUED_CONNECTIONS -> cuantas conexiones puedo encolar (no atender, sino
     // tener pendientes)
-    if (listen(server_socket, QUEUED_CONNECTIONS) < 0) {
-        log(LOGGER_ERROR, "%s", "listen failed");
-        exit_value = EXIT_FAILURE;
-        goto exit;
-    }
     if (listen(server_socket, QUEUED_CONNECTIONS) < 0) {
         log(LOGGER_ERROR, "%s", "server listen failed");
         exit_value = EXIT_FAILURE;

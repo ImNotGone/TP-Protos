@@ -7,7 +7,7 @@
 #include <pop3-parser.h>
 
 int main() {
-    parser_t parser = parser_init(get_pop3_parser_configuration());
+    parser_t parser = parser_init(pop3_parser_configuration_get());
 
     char * line = "UsEr gmaRtone\r\n";
     char * expected_cmd  = "user";

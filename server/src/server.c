@@ -185,7 +185,8 @@ int main(void) {
     log(LOGGER_INFO, "Max queued connections is %d", QUEUED_CONNECTIONS);
     log(LOGGER_INFO, "Attending a maximum of %d clients", BACKLOG);
 
-    monitor_t monitor;
+    // TODO: init monitor
+    // monitor_t monitor;
 
     selector_status = selector_register(selector, server_socket, &server_socket_handler, OP_READ, NULL);
     if(selector_status != SELECTOR_SUCCESS) {

@@ -97,7 +97,7 @@ void pop3_server_accept(struct selector_key* key) {
     client_data->state_machine.max_state = ERROR;
 
     // ==== Client parser ====
-    client_data->parser = parser_init(get_pop3_parser_configuration());
+    client_data->parser = parser_init(pop3_parser_configuration_get());
 
     // ==== Client buffer ====
     buffer_init(&client_data->buffer_in, BUFFLEN, client_data->buffer_in_data);

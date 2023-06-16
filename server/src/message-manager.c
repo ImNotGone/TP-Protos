@@ -97,7 +97,7 @@ struct message_manager_cdt {
 };
 
 // Function to create a new message manager
-message_manager_t create_message_manager(char *username) {
+message_manager_t message_manager_create(char *username) {
 
     // Check if the user is locked
     if (is_user_locked(username)) {
@@ -114,7 +114,7 @@ message_manager_t create_message_manager(char *username) {
 
     message_manager->username = malloc(strlen(username) + 1);
     if (message_manager->username == NULL) {
-        free_message_manager(message_manager);
+        message_manager_free(message_manager);
         errno = ENOMEM;
         return NULL;
     }
@@ -125,7 +125,7 @@ message_manager_t create_message_manager(char *username) {
     char *maildrop_path = malloc(strlen(MAILDIR_PATH) + strlen(username) + 1);
 
     if (maildrop_path == NULL) {
-        free_message_manager(message_manager);
+        message_manager_free(message_manager);
         errno = ENOMEM;
         return NULL;
     }
@@ -134,20 +134,20 @@ message_manager_t create_message_manager(char *username) {
     strcat(maildrop_path, username);
 
     if (maildrop_path == NULL) {
-        free_message_manager(message_manager);
+        message_manager_free(message_manager);
         return NULL;
     }
 
     struct stat maildrop_stat;
     if (stat(maildrop_path, &maildrop_stat) == -1) {
         free(maildrop_path);
-        free_message_manager(message_manager);
+        message_manager_free(message_manager);
         return NULL;
     }
 
     if (!S_ISDIR(maildrop_stat.st_mode)) {
         free(maildrop_path);
-        free_message_manager(message_manager);
+        message_manager_free(message_manager);
         errno = ENOTDIR;
         return NULL;
     }
@@ -160,7 +160,7 @@ message_manager_t create_message_manager(char *username) {
 
     if (maildrop_dir == NULL) {
         free(maildrop_path);
-        free_message_manager(message_manager);
+        message_manager_free(message_manager);
         return NULL;
     }
 
@@ -180,7 +180,7 @@ message_manager_t create_message_manager(char *username) {
 
     if (message_manager->message_data_array == NULL || message_manager->message_filename_array == NULL) {
         free(maildrop_path);
-        free_message_manager(message_manager);
+        message_manager_free(message_manager);
         errno = ENOMEM;
         return NULL;
     }
@@ -202,7 +202,7 @@ message_manager_t create_message_manager(char *username) {
 
             if (message_manager->message_filename_array[message_index] == NULL) {
                 free(maildrop_path);
-                free_message_manager(message_manager);
+                message_manager_free(message_manager);
                 errno = ENOMEM;
                 return NULL;
             }
@@ -218,7 +218,7 @@ message_manager_t create_message_manager(char *username) {
     // Lock the user
     if (add_locked_user(username) == -1) {
         free(maildrop_path);
-        free_message_manager(message_manager);
+        message_manager_free(message_manager);
         return NULL;
     }
 
@@ -226,7 +226,7 @@ message_manager_t create_message_manager(char *username) {
 }
 
 // Function to free a message manager
-void free_message_manager(message_manager_t message_manager) {
+void message_manager_free(message_manager_t message_manager) {
 
     if (message_manager == NULL) {
         return;
@@ -251,7 +251,7 @@ void free_message_manager(message_manager_t message_manager) {
 }
 
 // Function to get info of the messages in the maildrop
-int get_maildrop_info(message_manager_t message_manager, int *message_count, int *message_size) {
+int message_manager_get_maildrop_info(message_manager_t message_manager, int *message_count, int *message_size) {
 
     if (message_manager == NULL || message_count == NULL || message_size == NULL) {
         errno = EINVAL;
@@ -266,7 +266,7 @@ int get_maildrop_info(message_manager_t message_manager, int *message_count, int
 }
 
 // Function to get info of a message
-message_data_t *get_message_data(message_manager_t message_manager, int message_number) {
+message_data_t *message_manager_get_message_data(message_manager_t message_manager, int message_number) {
 
     if (message_manager == NULL || message_number < 1 || message_number > message_manager->message_array_size) {
         errno = EINVAL;
@@ -289,7 +289,7 @@ message_data_t *get_message_data(message_manager_t message_manager, int message_
 }
 
 // Function to get info of all the messages
-message_data_t *get_message_data_list(message_manager_t message_manager, int *message_count) {
+message_data_t *message_manager_get_message_data_list(message_manager_t message_manager, int *message_count) {
 
     if (message_manager == NULL || message_count == NULL) {
         errno = EINVAL;
@@ -316,7 +316,7 @@ message_data_t *get_message_data_list(message_manager_t message_manager, int *me
 }
 
 // Function to get the fd of a message
-int get_message_content(message_manager_t message_manager, int message_number) {
+int message_manager_get_message_content(message_manager_t message_manager, int message_number) {
 
     if (message_manager == NULL || message_number < 1 || message_number > message_manager->message_array_size) {
         errno = EINVAL;
@@ -353,7 +353,7 @@ int get_message_content(message_manager_t message_manager, int message_number) {
 }
 
 // Function to mark a message for deletion
-int delete_message(message_manager_t message_manager, int message_number) {
+int message_manager_delete_message(message_manager_t message_manager, int message_number) {
 
     if (message_manager == NULL || message_number < 1 || message_number > message_manager->message_array_size) {
         errno = EINVAL;
@@ -370,7 +370,7 @@ int delete_message(message_manager_t message_manager, int message_number) {
 }
 
 // Function to reset the deletion status of all the messages
-int reset_deleted_flag(message_manager_t message_manager) {
+int message_manager_reset_deleted_flag(message_manager_t message_manager) {
 
     if (message_manager == NULL) {
         errno = EINVAL;
@@ -395,7 +395,7 @@ int reset_deleted_flag(message_manager_t message_manager) {
 //   0 on success, -1 on failure
 // Note:
 //   If a file deletion fails, other messages will still be deleted
-int delete_marked_messages(message_manager_t message_manager) {
+int message_manager_delete_marked_messages(message_manager_t message_manager) {
 
     if (message_manager == NULL) {
         errno = EINVAL;

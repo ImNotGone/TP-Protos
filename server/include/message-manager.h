@@ -29,12 +29,12 @@ typedef struct message_manager_cdt* message_manager_t;
 //   ENOENT: The maildrop directory does not exist
 //   ENOTDIR: The maildrop path is not a directory
 //   EBUSY: The maildrop directory is locked by another connection
-message_manager_t create_message_manager(char *username);
+message_manager_t message_manager_create(char *username);
 
 // Free the given message manager
 // Parameters:
 //   message_manager: The message manager to free
-void free_message_manager(message_manager_t message_manager);
+void message_manager_free(message_manager_t message_manager);
 
 // Get the number of messages and the total size of all messages for the given clients maildrop
 // Parameters:
@@ -45,7 +45,7 @@ void free_message_manager(message_manager_t message_manager);
 //   0 on success, -1 on failure
 // Errors:
 //   EINVAL: a parameter was NULL
-int get_maildrop_info(message_manager_t message_manager, int *message_count, int *message_size);
+int message_manager_get_maildrop_info(message_manager_t message_manager, int *message_count, int *message_size);
 
 // Get the message data for the given message number
 // Parameters:
@@ -57,7 +57,7 @@ int get_maildrop_info(message_manager_t message_manager, int *message_count, int
 //   EINVAL: message_number was less than 1 or greater than the number of messages in the maildrop
 //           or message_manager was NULL
 //   ENOMEM: Insufficient memory to allocate the message_data_t struct
-message_data_t *get_message_data(message_manager_t message_manager, int message_number);
+message_data_t *message_manager_get_message_data(message_manager_t message_manager, int message_number);
 
 // Get a list of message data for all messages in the given clients maildrop
 // Parameters:
@@ -68,7 +68,7 @@ message_data_t *get_message_data(message_manager_t message_manager, int message_
 // Errors:
 //   ENOMEM: Insufficient memory to allocate the array of message_data_t structs
 //   EINVAL: A parameter was NULL
-message_data_t *get_message_data_list(message_manager_t message_manager, int *message_count);
+message_data_t *message_manager_get_message_data_list(message_manager_t message_manager, int *message_count);
 
 // Get the message content for the given message number
 // Parameters:
@@ -83,7 +83,7 @@ message_data_t *get_message_data_list(message_manager_t message_manager, int *me
 //   ENOENT: The message is marked for deletion
 //   ENOMEM: Insufficient memory to allocate the path to the message file
 //   Any errno value set by open()
-int get_message_content(message_manager_t message_manager, int message_number);
+int message_manager_get_message_content(message_manager_t message_manager, int message_number);
 
 // Delete the given message number from the given clients maildrop
 // Parameters:
@@ -97,7 +97,7 @@ int get_message_content(message_manager_t message_manager, int message_number);
 // Note:
 //   This function does not actually delete the message from the maildrop, it just marks it for deletion
 //   The message will be deleted when the client issues the QUIT command and the server enters the UPDATE state
-int delete_message(message_manager_t message_manager, int message_number);
+int message_manager_delete_message(message_manager_t message_manager, int message_number);
 
 // Reset the deleted flag for all messages in the given clients maildrop
 // Parameters:
@@ -106,7 +106,7 @@ int delete_message(message_manager_t message_manager, int message_number);
 //   0 on success, -1 on failure
 // Errors:
 //   EINVAL: message_manager was NULL
-int reset_deleted_flag(message_manager_t message_manager);
+int message_manager_reset_deleted_flag(message_manager_t message_manager);
 
 // Delete all messages in the given clients maildrop that have been marked for deletion
 // Parameters:
@@ -119,7 +119,7 @@ int reset_deleted_flag(message_manager_t message_manager);
 //   EINVAL: message_manager was NULL
 //   ENOMEM: Insufficient memory to allocate the path to the message file
 //   EIO: An error occurred while deleting a message file
-int delete_marked_messages(message_manager_t message_manager);
+int message_manager_delete_marked_messages(message_manager_t message_manager);
 
 
 #endif // MESSAGE_MANAGER_H

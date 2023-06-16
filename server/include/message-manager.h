@@ -28,7 +28,6 @@ typedef struct message_manager_cdt* message_manager_t;
 //   ENOMEM: Insufficient memory to create the message manager
 //   ENOENT: The maildrop directory does not exist
 //   ENOTDIR: The maildrop path is not a directory
-//   EBUSY: The maildrop directory is locked by another connection
 message_manager_t message_manager_create(char *username);
 
 // Free the given message manager

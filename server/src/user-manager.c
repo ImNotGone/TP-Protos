@@ -75,8 +75,7 @@ int user_manager_free(user_manager_t user_manager) {
         return -1;
     }
 
-    // Adds the users to the users file, all users that are marked for deletion
-    // are not added
+    // Adds the users to the users file
     if (save_users(user_manager, users_file) == -1) {
         fclose(users_file);
         errno = EIO;
@@ -106,9 +105,9 @@ int user_manager_create_user(user_manager_t user_manager, const char *username, 
     }
 
     // Checks if the username and password do not contain the delimiter nor
-    // whitespace
-    if (strchr(username, DELIMITER) != NULL || strchr(password, DELIMITER) != NULL ||
-        strpbrk(username, " \t") != NULL || strpbrk(password, " \t") != NULL) {
+    // whitespace nor \n nor \r nor \t
+    if (strchr(username, DELIMITER) != NULL || strpbrk(username, " \n\r\t") != NULL ||
+        strchr(password, DELIMITER) != NULL || strpbrk(password, " \n\r\t") != NULL) {
         errno = EINVAL;
         return -1;
     }
@@ -178,7 +177,6 @@ int user_manager_delete_user(user_manager_t user_manager, const char *username) 
         }
     }
 
-    // Checks if the user was found
     if (!user_found) {
         errno = ENOENT;
         return -1;
@@ -197,7 +195,6 @@ int user_manager_delete_user(user_manager_t user_manager, const char *username) 
         previous_user->next = current_user->next;
     }
 
-    // Frees the user
     free(current_user->username);
     free(current_user->password);
     free(current_user);
@@ -224,25 +221,21 @@ int user_manager_login(user_manager_t user_manager, const char *username, const 
         }
     }
 
-    // Checks if the user was found
     if (!user_found) {
         errno = ENOENT;
         return -1;
     }
 
-    // Checks if the user is locked
     if (current_user->is_locked) {
         errno = EACCES;
         return -1;
     }
 
-    // Checks if the password is correct
     if (strcmp(current_user->password, password) != 0) {
         errno = EACCES;
         return -1;
     }
 
-    // Locks the user
     current_user->is_locked = true;
 
     return 0;
@@ -414,7 +407,17 @@ static int load_users(user_manager_t user_manager, FILE *users_file) {
 // Function to save the users to the users file
 // Users file is not closed by this function
 static int save_users(user_manager_t user_manager, FILE *users_file) {
-    // TODO: implementar
+    user_list_t current_user = user_manager->user_list;
+
+    while (current_user != NULL) {
+        // Write username and password to the users file
+        if (fprintf(users_file, "%s%c%s\n", current_user->username, DELIMITER, current_user->password) < 0) {
+            return -1;
+        }
+        
+
+        current_user = current_user->next;
+    }
 
     return 0;
 }

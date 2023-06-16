@@ -5,8 +5,7 @@
 #include <state-machine.h>
 #include <pop3-parser.h>
 #include <buffer.h>
-
-#define BUFFLEN 1024
+#include <server.h>
 
 #define CLIENT_DATA(key) ((client_t *)(key->data))
 
@@ -31,10 +30,10 @@ typedef struct client {
     char * user;
 
     struct buffer buffer_in;
-    uint8_t buffer_in_data[BUFFLEN];
+    uint8_t buffer_in_data[BUFFSIZE];
 
     struct buffer buffer_out;
-    uint8_t buffer_out_data[BUFFLEN];
+    uint8_t buffer_out_data[BUFFSIZE];
 } client_t;
 
 void pop3_server_accept(struct selector_key* key);

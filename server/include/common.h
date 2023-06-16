@@ -12,8 +12,6 @@
 
 #define PORT_MONITOR 8889
 
-#define BUFFLEN 1024
-
 typedef struct sockaddr_in SAIN;
 typedef struct sockaddr_in6 SAIN6;
 typedef struct sockaddr SA;

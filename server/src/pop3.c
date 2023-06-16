@@ -109,8 +109,8 @@ void pop3_server_accept(struct selector_key* key) {
     client_data->parser = parser_init(pop3_parser_configuration_get());
 
     // ==== Client buffer ====
-    buffer_init(&client_data->buffer_in, BUFFLEN, client_data->buffer_in_data);
-    buffer_init(&client_data->buffer_out, BUFFLEN, client_data->buffer_out_data);
+    buffer_init(&client_data->buffer_in, BUFFSIZE, client_data->buffer_in_data);
+    buffer_init(&client_data->buffer_out, BUFFSIZE, client_data->buffer_out_data);
 
     state_machine_init(&client_data->state_machine);
 

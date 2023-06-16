@@ -1,19 +1,18 @@
 #define _GNU_SOURCE
 
-#include <pop3.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <message-manager.h>
+#include <pop3.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <stdio.h>
-
-#define MAILDIR_PATH "/var/mail/"
 
 // ========== Message manager ==========
 struct message_manager_cdt {
-    char *username;
+
+    char *maildrop_path;
 
     message_data_t *message_data_array;
 
@@ -25,7 +24,7 @@ struct message_manager_cdt {
 };
 
 // Function to create a new message manager
-message_manager_t message_manager_create(char *username) {
+message_manager_t message_manager_create(char *username, char *maildrop_parent_path) {
 
     message_manager_t message_manager = malloc(sizeof(struct message_manager_cdt));
 
@@ -34,45 +33,34 @@ message_manager_t message_manager_create(char *username) {
         return NULL;
     }
 
-    message_manager->username = malloc(strlen(username) + 1);
-    if (message_manager->username == NULL) {
-        message_manager_free(message_manager);
-        errno = ENOMEM;
-        return NULL;
-    }
-
-    strcpy(message_manager->username, username);
-
     // Check if the user's maildrop exists & it is a directory
-    char *maildrop_path = malloc(strlen(MAILDIR_PATH) + strlen(username) + 1);
+    char *maildrop_path = malloc(strlen(maildrop_parent_path) + strlen(username) + 2);
 
     if (maildrop_path == NULL) {
-        message_manager_free(message_manager);
+        free(message_manager);
         errno = ENOMEM;
         return NULL;
     }
 
-    strcpy(maildrop_path, MAILDIR_PATH);
+    strcpy(maildrop_path, maildrop_parent_path);
     strcat(maildrop_path, username);
-
-    if (maildrop_path == NULL) {
-        message_manager_free(message_manager);
-        return NULL;
-    }
+    strcat(maildrop_path, "/");
 
     struct stat maildrop_stat;
     if (stat(maildrop_path, &maildrop_stat) == -1) {
         free(maildrop_path);
-        message_manager_free(message_manager);
+        free(message_manager);
         return NULL;
     }
 
     if (!S_ISDIR(maildrop_stat.st_mode)) {
         free(maildrop_path);
-        message_manager_free(message_manager);
+        free(message_manager);
         errno = ENOTDIR;
         return NULL;
     }
+
+    message_manager->maildrop_path = maildrop_path;
 
     // Load all the data of the messages in the maildrop
     message_manager->message_array_size = 0;
@@ -81,8 +69,8 @@ message_manager_t message_manager_create(char *username) {
     DIR *maildrop_dir = opendir(maildrop_path);
 
     if (maildrop_dir == NULL) {
-        free(maildrop_path);
-        message_manager_free(message_manager);
+        free(message_manager->maildrop_path);
+        free(message_manager);
         return NULL;
     }
 
@@ -90,7 +78,6 @@ message_manager_t message_manager_create(char *username) {
     while ((maildrop_entry = readdir(maildrop_dir)) != NULL) {
         if (maildrop_entry->d_type == DT_REG) {
             message_manager->message_array_size++;
-            message_manager->total_message_size += maildrop_entry->d_reclen;
         }
     }
 
@@ -101,8 +88,10 @@ message_manager_t message_manager_create(char *username) {
     message_manager->message_filename_array = malloc(sizeof(char *) * message_manager->message_array_size);
 
     if (message_manager->message_data_array == NULL || message_manager->message_filename_array == NULL) {
-        free(maildrop_path);
-        message_manager_free(message_manager);
+        free(message_manager->maildrop_path);
+        free(message_manager->message_data_array);
+        free(message_manager->message_filename_array);
+        free(message_manager);
         errno = ENOMEM;
         return NULL;
     }
@@ -110,20 +99,19 @@ message_manager_t message_manager_create(char *username) {
     // Load the data of the messages
     rewinddir(maildrop_dir);
     int message_index = 0;
+    message_manager->total_message_size = 0;
 
     while ((maildrop_entry = readdir(maildrop_dir)) != NULL) {
         if (maildrop_entry->d_type == DT_REG) {
 
             // Load message data
             message_manager->message_data_array[message_index].message_number = message_index + 1;
-            message_manager->message_data_array[message_index].message_size = maildrop_entry->d_reclen;
             message_manager->message_data_array[message_index].marked_for_deletion = false;
 
             // Load filename
             message_manager->message_filename_array[message_index] = malloc(strlen(maildrop_entry->d_name) + 1);
 
             if (message_manager->message_filename_array[message_index] == NULL) {
-                free(maildrop_path);
                 message_manager_free(message_manager);
                 errno = ENOMEM;
                 return NULL;
@@ -131,6 +119,20 @@ message_manager_t message_manager_create(char *username) {
 
             strcpy(message_manager->message_filename_array[message_index], maildrop_entry->d_name);
 
+            // Get size of the file
+            char message_path[strlen(maildrop_path) + strlen(maildrop_entry->d_name) + 1];
+            strcpy(message_path, maildrop_path);
+            strcat(message_path, maildrop_entry->d_name);
+
+            struct stat message_stat;
+            if (stat(message_path, &message_stat) == -1) {
+                message_manager_free(message_manager);
+                return NULL;
+            }
+
+            message_manager->message_data_array[message_index].message_size = message_stat.st_size;
+
+            message_manager->total_message_size += message_stat.st_size;
             message_index++;
         }
     }
@@ -154,7 +156,7 @@ void message_manager_free(message_manager_t message_manager) {
         }
     }
 
-    free(message_manager->username);
+    free(message_manager->maildrop_path);
     free(message_manager->message_data_array);
     free(message_manager->message_filename_array);
     free(message_manager);
@@ -239,27 +241,16 @@ int message_manager_get_message_content(message_manager_t message_manager, int m
     }
 
     // Get the path of the message
-    int maildrop_path_length = strlen(MAILDIR_PATH) + strlen(message_manager->username) +
-                               strlen(message_manager->message_filename_array[message_number - 1]) + 2;
+    int message_path_length = strlen(message_manager->maildrop_path) +
+                              strlen(message_manager->message_filename_array[message_number - 1]) + 1;
 
-    char *maildrop_path = malloc(maildrop_path_length);
+    char message_path[message_path_length];
 
-    if (maildrop_path == NULL) {
-        errno = ENOMEM;
-        return -1;
-    }
-
-    strcpy(maildrop_path, MAILDIR_PATH);
-    strcat(maildrop_path, message_manager->username);
-    strcat(maildrop_path, "/");
-    strcat(maildrop_path, message_manager->message_filename_array[message_number - 1]);
+    strcpy(message_path, message_manager->maildrop_path);
+    strcat(message_path, message_manager->message_filename_array[message_number - 1]);
 
     // Open the message
-    int message_fd = open(maildrop_path, O_RDONLY);
-
-    free(maildrop_path);
-
-    return message_fd;
+    return open(message_path, O_RDONLY);
 }
 
 // Function to mark a message for deletion
@@ -298,13 +289,6 @@ int message_manager_reset_deleted_flag(message_manager_t message_manager) {
 }
 
 // Function to delete all the messages marked for deletion
-// // Delete all messages in the given clients maildrop that have been marked for deletion
-// Parameters:
-//   message_manager: The message manager
-// Returns:
-//   0 on success, -1 on failure
-// Note:
-//   If a file deletion fails, other messages will still be deleted
 int message_manager_delete_marked_messages(message_manager_t message_manager) {
 
     if (message_manager == NULL) {
@@ -312,46 +296,22 @@ int message_manager_delete_marked_messages(message_manager_t message_manager) {
         return -1;
     }
 
-    // Get the path of the maildrop
-    int maildrop_path_length = strlen(MAILDIR_PATH) + strlen(message_manager->username) + 1;
-
-    char *maildrop_path = malloc(maildrop_path_length);
-
-    if (maildrop_path == NULL) {
-        errno = ENOMEM;
-        return -1;
-    }
-
-    strcpy(maildrop_path, MAILDIR_PATH);
-    strcat(maildrop_path, message_manager->username);
-
+    // Delete all the files of the messages marked for deletion
     bool errorHappened = false;
 
-    // Delete all the files of the messages marked for deletion
-    for (int i = 0; i < message_manager->message_count; i++) {
+    for (int i = 0; i < message_manager->message_array_size; i++) {
         if (message_manager->message_data_array[i].marked_for_deletion) {
             char *filename = message_manager->message_filename_array[i];
-            char *filepath = malloc(strlen(maildrop_path) + strlen(filename) + 2);
+            char filepath[strlen(message_manager->maildrop_path) + strlen(filename) + 1];
 
-            if (filepath == NULL) {
-                errno = ENOMEM;
-                errorHappened = true;
-                continue;
-            }
-
-            strcpy(filepath, maildrop_path);
-            strcat(filepath, "/");
+            strcpy(filepath, message_manager->maildrop_path);
             strcat(filepath, filename);
 
             if (remove(filepath) == -1) {
                 errorHappened = true;
-            } 
-
-            free(filepath);
+            }
         }
     }
-
-    free(maildrop_path);
 
     if (errorHappened) {
         errno = EIO;

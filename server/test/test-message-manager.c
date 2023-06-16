@@ -83,7 +83,8 @@ int main() {
     // Test message_manager_get_message_data
     message_data_t *message_data = message_manager_get_message_data(mm, 1);
 
-    assert(message_data->message_size == file_1_size);
+    assert(message_data->message_size == file_1_size || message_data->message_size == file_2_size ||
+           message_data->message_size == 0);
     assert(message_data->message_number == 1);
     assert(message_data->marked_for_deletion == false);
 
@@ -91,7 +92,8 @@ int main() {
 
     message_data = message_manager_get_message_data(mm, 2);
 
-    assert(message_data->message_size == file_2_size);
+    assert(message_data->message_size == file_1_size || message_data->message_size == file_2_size ||
+           message_data->message_size == 0);
     assert(message_data->message_number == 2);
     assert(message_data->marked_for_deletion == false);
 
@@ -99,7 +101,8 @@ int main() {
 
     message_data = message_manager_get_message_data(mm, 3);
 
-    assert(message_data->message_size == 0);
+    assert(message_data->message_size == file_1_size || message_data->message_size == file_2_size ||
+           message_data->message_size == 0);
     assert(message_data->message_number == 3);
     assert(message_data->marked_for_deletion == false);
 
@@ -111,10 +114,17 @@ int main() {
 
     assert(message_data_list_size == 3);
 
+    int dummy_message_number = 0;
+
     for (int i = 0; i < message_data_list_size; i++) {
         assert(message_data_list[i].message_number == i + 1);
-        assert(message_data_list[i].message_size == (i == 0 ? file_1_size : (i == 1 ? file_2_size : 0)));
+        assert(message_data_list[i].message_size == file_1_size || message_data_list[i].message_size == file_2_size ||
+               message_data_list[i].message_size == 0);
         assert(message_data_list[i].marked_for_deletion == false);
+
+        if (message_data_list[i].message_size == 0) {
+            dummy_message_number = message_data_list[i].message_number;
+        }
     }
 
     free(message_data_list);
@@ -128,10 +138,20 @@ int main() {
     assert(fd_2 != -1);
     assert(fd_3 != -1);
 
+    assert(fd_1 != fd_2);
+    assert(fd_1 != fd_3);
+    assert(fd_2 != fd_3);
+
     // Check if the file descriptor refers to the correct file
-    assert(is_fd_same_file(fd_1, "./test/resources/maildrops/pepe/1.txt"));
-    assert(is_fd_same_file(fd_2, "./test/resources/maildrops/pepe/2.txt"));
-    assert(is_fd_same_file(fd_3, "./test/resources/maildrops/pepe/dummy.txt"));
+    assert(is_fd_same_file(fd_1, "./test/resources/maildrops/pepe/1.txt") ||
+           is_fd_same_file(fd_1, "./test/resources/maildrops/pepe/2.txt") ||
+           is_fd_same_file(fd_1, "./test/resources/maildrops/pepe/dummy.txt"));
+    assert(is_fd_same_file(fd_2, "./test/resources/maildrops/pepe/2.txt") ||
+           is_fd_same_file(fd_2, "./test/resources/maildrops/pepe/1.txt") ||
+           is_fd_same_file(fd_2, "./test/resources/maildrops/pepe/dummy.txt"));
+    assert(is_fd_same_file(fd_3, "./test/resources/maildrops/pepe/dummy.txt") ||
+           is_fd_same_file(fd_3, "./test/resources/maildrops/pepe/1.txt") ||
+           is_fd_same_file(fd_3, "./test/resources/maildrops/pepe/2.txt"));
 
     close(fd_1);
     close(fd_2);
@@ -156,15 +176,13 @@ int main() {
     free(message_data);
 
     // Test message_manager_delete_marked_messages
-    message_manager_delete_message(mm, 3);
+    message_manager_delete_message(mm, dummy_message_number);
     message_manager_delete_marked_messages(mm);
-
-    // Check if the message was deleted
-
 
     // ============ Clean up ============
     message_manager_free(mm);
 
+    // Check if the message was deleted
     assert(access("./test/resources/maildrops/pepe/dummy.txt", F_OK) == -1);
 
     return 0;

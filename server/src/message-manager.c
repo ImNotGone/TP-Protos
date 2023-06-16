@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 
+#include <pop3.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>

@@ -34,7 +34,7 @@ user_manager_t user_manager_create();
 //   The user manager also deletes the users added to it from the users file
 int user_manager_free(user_manager_t user_manager);
 
-// Creates a user to the user manager
+// Creates a user in the user manager
 // Parameters:
 //   user_manager - The user manager
 //   username - The username of the user to create
@@ -53,6 +53,9 @@ int user_manager_create_user(user_manager_t user_manager, const char* username, 
 //   username - The username of the user to delete
 // Returns:
 //   0 on success, -1 on failure
+// Errors:
+//   EINVAL: Any of the parameters are NULL
+//   ENOENT: A user with the given username does not exist
 int user_manager_delete_user(user_manager_t user_manager, const char* username);
 
 // Logs a user into the user manager
@@ -62,6 +65,11 @@ int user_manager_delete_user(user_manager_t user_manager, const char* username);
 //   password - The password of the user to validate
 // Returns:
 //   0 on success, -1 on failure
+// Errors:
+//   EINVAL: Any of the parameters are NULL
+//   ENOENT: A user with the given username does not exist
+//   EACCES: The password is incorrect
+//   EBUSY: The users maildrop is locked
 // Notes:
 //   Once a user is logged in, no other pop3 connections
 //   can log in as that user until the user logs out
@@ -75,6 +83,9 @@ int user_manager_login(user_manager_t user_manager, const char* username, const 
 //   username - The username of the user to log out
 // Returns:
 //   0 on success, -1 on failure
+// Errors:
+//   EINVAL: Any of the parameters are NULL
+//   ENOENT: A user with the given username does not exist
 // Notes:
 //   Once a user is logged out, other pop3 connections
 //   can log in as that user

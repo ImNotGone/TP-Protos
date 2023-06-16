@@ -24,6 +24,9 @@ int main(void) {
     // Cierro stdin
     fclose(stdin);
 
+    // TODO: Change log lvl
+    logger_set_log_lvl(LOGGER_DEBUG);
+
     // Create selector
     //const char * error_message = NULL;
     selector_status selector_status = SELECTOR_SUCCESS;

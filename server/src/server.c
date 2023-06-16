@@ -70,9 +70,12 @@ int main(void) {
 
     int exit_value = EXIT_SUCCESS;
 
-    // Armo los sockets
+    // inicio los sockets
     int server_socket = -1;
     int monitor_socket = -1;
+
+    // inicio el monitor
+    monitor_t monitor = NULL;
 
     // === Request a socket ===
     if ((server_socket = socket(AF_INET6, SOCK_STREAM, TCP)) < 0) {
@@ -157,8 +160,7 @@ int main(void) {
     log(LOGGER_INFO, "Max queued connections is %d", QUEUED_CONNECTIONS);
     log(LOGGER_INFO, "Attending a maximum of %d clients", BACKLOG);
 
-    // TODO: init monitor
-    monitor_t monitor = monitor_new(MAX_USERS, MAX_CONNS, QUEUED_CONNECTIONS);
+    monitor = monitor_init(MAX_USERS, MAX_CONNS, QUEUED_CONNECTIONS);
 
     selector_status = selector_register(selector, server_socket, &server_socket_handler, OP_READ, NULL);
     if(selector_status != SELECTOR_SUCCESS) {
@@ -181,6 +183,9 @@ int main(void) {
     }
 
 exit:
+    if(monitor != NULL) {
+        monitor_destroy(monitor);
+    }
     if(selector != NULL) {
         selector_destroy(selector);
     }

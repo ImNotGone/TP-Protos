@@ -1,6 +1,7 @@
 #include <monitor.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
 typedef struct logsCDT{
     char * username;
@@ -34,7 +35,7 @@ typedef struct monitorCDT{
 }monitorCDT;
 
 //TODO: check if parameters are zero
-monitor_t monitor_new(unsigned max_users, unsigned max_conns, unsigned queued_conns){
+monitor_t monitor_init(unsigned max_users, unsigned max_conns, unsigned queued_conns){
     monitor_t new = calloc(1, sizeof(monitorCDT));
 
     metrics_t metrics = calloc(1, sizeof(metricsCDT));
@@ -51,7 +52,7 @@ monitor_t monitor_new(unsigned max_users, unsigned max_conns, unsigned queued_co
 }
 
 //TODO: check nulls
-void monitor_new_connection(monitor_t monitor, char * username, char * date_hour){
+void monitor_add_connection(monitor_t monitor, char * username, char * date_hour){
     monitor->metrics->historic_conns++;
     monitor->metrics->current_conns++;
     logs_t new_node = malloc(sizeof(logsCDT));
@@ -62,8 +63,8 @@ void monitor_new_connection(monitor_t monitor, char * username, char * date_hour
     monitor->last_log  = new_node;
 }
 
-void monitor_new_user(char * username){
-
+void monitor_add_user(monitor_t motnitor, char * username){
+    assert(0 && "Unimplemented");
 }
 
 void monitor_set_max_users(monitor_t monitor, unsigned val){
@@ -74,10 +75,24 @@ void monitor_set_max_conns(monitor_t monitor, unsigned val){
     monitor->config->max_conns=val;
 }
 
-void monitor_change_password(char * username, char * new_pass){
-
+void monitor_change_user_password(monitor_t monitor, char * username, char * new_pass){
+    assert(0 && "Unimplemented");
 }
 
-void monitor_delete_user(char * username){
+void monitor_delete_user(monitor_t monitor, char * username) {
+    assert(0 && "Unimplemented");
+}
 
+static void freeList(logs_t first) {
+    if(first == NULL) return;
+    freeList(first->next);
+    free(first);
+}
+
+void monitor_destroy(monitor_t monitor) {
+    //TODO: revisar
+    freeList(monitor->first_log);
+    free(monitor->metrics);
+    free(monitor->config);
+    free(monitor);
 }

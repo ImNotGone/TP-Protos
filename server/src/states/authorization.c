@@ -1,4 +1,5 @@
 #include <buffer.h>
+#include <user-manager.h>
 #include <commands.h>
 #include <logger.h>
 #include <parser.h>
@@ -58,11 +59,10 @@ static states_t handle_user(client_t * client_data, char * user, int user_len, c
 }
 
 static states_t handle_pass(client_t * client_data, char * pass, int unused1, char * unused2, int unused3) {
-    bool authenticated = true;
     client_data->response_index = 0;
 
     // TODO: handle according to errno
-    bool authenticated = user_manager_login(client_data->user, pass);
+    bool authenticated = user_manager_login(client_data->user, pass) == 0;
 
     if (authenticated) {
         client_data->response = RESPONSE_PASS_SUCCESS;

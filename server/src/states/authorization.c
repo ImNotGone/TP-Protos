@@ -1,10 +1,13 @@
-#include <pop3-parser.h>
-#include <selector.h>
-#include <parser.h>
-#include <logger.h>
-#include <pop3.h>
-#include <states/authorization.h>
 #include <buffer.h>
+#include <commands.h>
+#include <logger.h>
+#include <parser.h>
+#include <pop3-parser.h>
+#include <pop3.h>
+#include <responses.h>
+#include <selector.h>
+#include <states/authorization.h>
+#include <states/states-common.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -57,8 +60,11 @@ static states_t handle_user(client_t * client_data, char * user, int user_len, c
 static states_t handle_pass(client_t * client_data, char * pass, int unused1, char * unused2, int unused3) {
     bool authenticated = true;
     client_data->response_index = 0;
-    // TODO: call method to check if authenticated
-    if(authenticated) {
+
+    // TODO: handle according to errno
+    bool authenticated = user_manager_login(client_data->user, pass);
+
+    if (authenticated) {
         client_data->response = RESPONSE_PASS_SUCCESS;
         states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
         return TRANSACTION;

@@ -1,4 +1,5 @@
 #include <arpa/inet.h>
+#include <user-manager.h>
 #include <errno.h>
 #include <server.h>
 #include <signal.h>
@@ -76,6 +77,26 @@ int main(void) {
 
     // inicio el monitor
     monitor_t monitor = NULL;
+
+    // inicio el user manager
+    if (user_manager_create("./server/test/resources/users.txt", "./server/test/resources/maildrops/") == -1) {
+        switch (errno) {
+            case ENOMEM:
+                log(LOGGER_ERROR, "%s", "user manager creation failed: out of memory");
+                break;
+            case EINVAL:
+                log(LOGGER_ERROR, "%s", "user manager creation failed: invalid argument");
+                break;
+            case ENOENT:
+                log(LOGGER_ERROR, "%s", "user manager creation failed: maildrop parent directory not found");
+                break;
+            default:
+                log(LOGGER_ERROR, "%s", "user manager creation failed");
+                break;
+        }
+        exit_value = EXIT_FAILURE;
+        goto exit;
+    }
 
     // === Request a socket ===
     if ((server_socket = socket(AF_INET6, SOCK_STREAM, TCP)) < 0) {
@@ -188,6 +209,10 @@ exit:
     }
     if(selector != NULL) {
         selector_destroy(selector);
+    }
+    if(user_manager_free() == -1) {
+        log(LOGGER_ERROR, "%s", "Error saving users to users file");
+        exit_value = EXIT_FAILURE;
     }
     selector_close();
     if(server_socket >= 0) {

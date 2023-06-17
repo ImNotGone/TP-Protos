@@ -16,13 +16,6 @@ struct user_list_cdt {
     user_list_t next;
 };
 
-struct user_manager_cdt {
-    user_list_t user_list;
-
-    char *users_file_path;
-    char *maildrop_parent_path;
-};
-
 int main() {
 
     // ====== Expected values ======

@@ -39,8 +39,9 @@ int user_manager_create(char* users_file_path, char* maildrop_parent_path);
 // Errors:
 //   EIO: The users file could not be opened, or written to
 // Notes:
-//   The user manager saves the users added to it to the users file
-//   The user manager also deletes the users added to it from the users file
+//   The user manager saves all the users in memory to the users file
+//   If the users file does not exist, it is created
+//   Any users in the users file that are not in memory are also deleted
 int user_manager_free();
 
 // Creates a user in the user manager

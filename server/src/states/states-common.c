@@ -1,3 +1,4 @@
+#include <pop3.h>
 #include <states/states-common.h>
 #include <logger.h>
 #include <commands.h>
@@ -11,11 +12,17 @@ inline void states_common_response_write(struct buffer * buffer, char * response
     }
 }
 
-static void unknown_command(client_t * client_data) {
+static states_t unknown_command_handler(client_t * client_data, char * unused1, int unused2, char * unused3, int unused4) {
     client_data->response_index = 0;
     client_data->response = RESPONSE_UNKNOWN;
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+    return client_data->state_machine.current->state;
 }
+
+static command_t unknown_command = {
+    .name = "UNKNOWN",
+    .command_handler = unknown_command_handler
+};
 
 states_t states_common_read(struct selector_key * key, char * state, command_t * commands, int cant_commands) {
     log(LOGGER_DEBUG, "state:%s reading on sd:%d", state, key->fd);
@@ -52,13 +59,10 @@ states_t states_common_read(struct selector_key * key, char * state, command_t *
 
             if(command == NULL) {
                 log(LOGGER_ERROR, "command not supported on state:%s for sd:%d", state, key->fd);
-                unknown_command(client_data);
-                parser_reset(client_data->parser);
-                pop3_parser_reset_event(parser_event);
-                return current_state;
+                command = &unknown_command;
             }
 
-            states_t next_state =  command->command_handler(client_data, (char*)parser_event->args[0], parser_event->args_len[0], (char *)parser_event->args[1], parser_event->args_len[1]);
+            states_t next_state = command->command_handler(client_data, (char*)parser_event->args[0], parser_event->args_len[0], (char *)parser_event->args[1], parser_event->args_len[1]);
 
             if(selector_set_interest_key(key, OP_WRITE)  != SELECTOR_SUCCESS) {
                 log(LOGGER_ERROR, "setting selector interest to write on state:%s for sd:%d", state, key->fd);
@@ -119,11 +123,8 @@ states_t states_common_write(struct selector_key * key, char * state, command_t 
             command_t * command = get_command(client_data, parser_event, commands, cant_commands);
 
             if(command == NULL) {
-                log(LOGGER_ERROR, "command not supported for sd:%d", key->fd);
-                unknown_command(client_data);
-                parser_reset(client_data->parser);
-                pop3_parser_reset_event(parser_event);
-                return current_state;
+                log(LOGGER_ERROR, "command not supported on state:%s for sd:%d", state, key->fd);
+                command = &unknown_command;
             }
 
             states_t next_state =  command->command_handler(client_data, (char*)parser_event->args[0], parser_event->args_len[0], (char *)parser_event->args[1], parser_event->args_len[1]);

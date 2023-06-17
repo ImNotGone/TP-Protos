@@ -37,6 +37,22 @@ struct user_manager_cdt {
 
 // Creates a new user manager
 user_manager_t user_manager_create(char *users_file_path, char *maildrop_parent_path) {
+
+    // Checks the parameters
+    if (users_file_path == NULL || maildrop_parent_path == NULL) {
+        errno = EINVAL;
+        return NULL;
+    }
+
+    // Check maildrop directory existence
+    DIR *maildrop_parent_dir = opendir(maildrop_parent_path);
+
+    if (maildrop_parent_dir == NULL) {
+        errno = ENOENT;
+        return NULL;
+    }
+    closedir(maildrop_parent_dir);
+
     user_manager_t new_user_manager = malloc(sizeof(struct user_manager_cdt));
 
     if (new_user_manager == NULL) {
@@ -62,6 +78,8 @@ user_manager_t user_manager_create(char *users_file_path, char *maildrop_parent_
         errno = ENOMEM;
         return NULL;
     }
+
+    strcpy(new_user_manager->maildrop_parent_path, maildrop_parent_path);
 
     // Loads the users from the users file
     new_user_manager->user_list = NULL;

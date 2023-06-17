@@ -30,6 +30,16 @@ test/test-message-manager: src/message-manager.c test/test-message-manager.c
 	# borro los tests para que se corran denuevo
 	rm $@
 
+test/test-user-manager: src/user-manager.c test/test-user-manager.c
+	$(CC) $(CC_FLAGS) -I./include $^ -o $@
+	@if ./$@; then \
+		echo -e "\033[32m$@\033[0m"; \
+	else \
+		echo -e "\033[31m$@\033[0m"; \
+	fi
+	# borro los tests para que se corran denuevo
+	rm $@
+
 %.o: %.c
 	# $< first prerequisite
 	# $@ target

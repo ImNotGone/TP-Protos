@@ -20,7 +20,7 @@ typedef struct message_manager_cdt* message_manager_t;
 // Parameters:
 //   username: The username of the maildrop to create the message manager for
 //             must be null terminated
-//   maildrop_parent_path: The path of the directory containing all maildrops
+//   maildrop_parent_path: The path of the directory containing all maildrops, it includes the trailing '/'
 // Returns:
 //   A pointer to a message_manager_t struct on success, NULL on failure
 // Errors:

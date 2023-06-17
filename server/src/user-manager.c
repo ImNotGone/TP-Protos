@@ -1,15 +1,12 @@
 #define _GNU_SOURCE
+#include <dirent.h>
 #include <errno.h>
 #include <pop3.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <user-manager.h>
-
-#define USERS_FILE "users.txt"
-#define MAX_PASSWORD_LENGTH 32
-#define MAX_USERNAME_LENGTH 32
-#define DELIMITER ':'
 
 // ============ User list ============
 typedef struct user_list_cdt *user_list_t;
@@ -27,15 +24,35 @@ static void free_user_list(user_list_t user_list);
 
 static int load_users(user_manager_t user_manager, FILE *users_file);
 static int save_users(user_manager_t user_manager, FILE *users_file);
+static int delete_directory(const char *directory_path);
 
 // ============ User manager ============
 
 struct user_manager_cdt {
     user_list_t user_list;
+
+    char *users_file_path;
+    char *maildrop_parent_path;
 };
 
 // Creates a new user manager
-user_manager_t user_manager_create() {
+user_manager_t user_manager_create(char *users_file_path, char *maildrop_parent_path) {
+
+    // Checks the parameters
+    if (users_file_path == NULL || maildrop_parent_path == NULL) {
+        errno = EINVAL;
+        return NULL;
+    }
+
+    // Check maildrop directory existence
+    DIR *maildrop_parent_dir = opendir(maildrop_parent_path);
+
+    if (maildrop_parent_dir == NULL) {
+        errno = ENOENT;
+        return NULL;
+    }
+    closedir(maildrop_parent_dir);
+
     user_manager_t new_user_manager = malloc(sizeof(struct user_manager_cdt));
 
     if (new_user_manager == NULL) {
@@ -43,9 +60,30 @@ user_manager_t user_manager_create() {
         return NULL;
     }
 
-    new_user_manager->user_list = NULL;
+    new_user_manager->users_file_path = malloc(strlen(users_file_path) + 1);
 
-    FILE *users_file = fopen(USERS_FILE, "r");
+    if (new_user_manager->users_file_path == NULL) {
+        free(new_user_manager);
+        errno = ENOMEM;
+        return NULL;
+    }
+
+    strcpy(new_user_manager->users_file_path, users_file_path);
+
+    new_user_manager->maildrop_parent_path = malloc(strlen(maildrop_parent_path) + 1);
+
+    if (new_user_manager->maildrop_parent_path == NULL) {
+        free(new_user_manager->users_file_path);
+        free(new_user_manager);
+        errno = ENOMEM;
+        return NULL;
+    }
+
+    strcpy(new_user_manager->maildrop_parent_path, maildrop_parent_path);
+
+    // Loads the users from the users file
+    new_user_manager->user_list = NULL;
+    FILE *users_file = fopen(users_file_path, "r");
 
     if (users_file != NULL) {
         bool load_error = load_users(new_user_manager, users_file) == -1;
@@ -68,7 +106,7 @@ int user_manager_free(user_manager_t user_manager) {
     }
 
     // Creates or truncates the users file
-    FILE *users_file = fopen(USERS_FILE, "w");
+    FILE *users_file = fopen(user_manager->users_file_path, "w");
 
     if (users_file == NULL) {
         errno = EIO;
@@ -85,6 +123,9 @@ int user_manager_free(user_manager_t user_manager) {
     fclose(users_file);
 
     free_user_list(user_manager->user_list);
+
+    free(user_manager->users_file_path);
+    free(user_manager->maildrop_parent_path);
 
     free(user_manager);
 
@@ -149,6 +190,22 @@ int user_manager_create_user(user_manager_t user_manager, const char *username, 
 
     new_user->is_locked = false;
 
+    // Creates the user's maildrop
+    int maildrop_path_length = strlen(user_manager->maildrop_parent_path) + strlen(username) + 1;
+    char maildrop_path[maildrop_path_length];
+
+    strcpy(maildrop_path, user_manager->maildrop_parent_path);
+    strcat(maildrop_path, username);
+
+    if (mkdir(maildrop_path, 0700) == -1) {
+        free(new_user->username);
+        free(new_user->password);
+        free(new_user);
+
+        errno = EIO;
+        return -1;
+    }
+
     // Adds the user to the front of the user list
     new_user->next = user_manager->user_list;
     user_manager->user_list = new_user;
@@ -185,6 +242,18 @@ int user_manager_delete_user(user_manager_t user_manager, const char *username) 
     // If the user is locked, it cannot be deleted
     if (current_user->is_locked) {
         errno = EBUSY;
+        return -1;
+    }
+
+    // Deletes the user's maildrop
+    int maildrop_path_length = strlen(user_manager->maildrop_parent_path) + strlen(username) + 1;
+    char maildrop_path[maildrop_path_length];
+
+    strcpy(maildrop_path, user_manager->maildrop_parent_path);
+    strcat(maildrop_path, username);
+
+    if (delete_directory(maildrop_path) == -1) {
+        errno = EIO;
         return -1;
     }
 
@@ -226,13 +295,13 @@ int user_manager_login(user_manager_t user_manager, const char *username, const 
         return -1;
     }
 
-    if (current_user->is_locked) {
+    if (strcmp(current_user->password, password) != 0) {
         errno = EACCES;
         return -1;
     }
 
-    if (strcmp(current_user->password, password) != 0) {
-        errno = EACCES;
+    if (current_user->is_locked) {
+        errno = EBUSY;
         return -1;
     }
 
@@ -289,7 +358,7 @@ static void free_user_list(user_list_t user_list) {
 }
 
 // Function to parse a line from the users file
-static int parse_line(char *line, char **username, char **password) {
+static int parse_line(char *line, char *username, char *password) {
 
     // Ignore whitespace
     while (*line == ' ' || *line == '\t') {
@@ -307,7 +376,7 @@ static int parse_line(char *line, char **username, char **password) {
     }
 
     // Find the username
-    *username = line;
+    char *username_start = line;
     int username_length = 1;
     while (*line != DELIMITER && *line != '\n' && *line != '\0' && username_length <= MAX_USERNAME_LENGTH) {
         line++;
@@ -324,8 +393,11 @@ static int parse_line(char *line, char **username, char **password) {
         return -1;
     }
 
-    // Null terminate the username
+    // Replace the delimiter with a null terminator
     *line = '\0';
+
+    // Copy the username
+    strcpy(username, username_start);
 
     // Ignore whitespace
     line++;
@@ -339,7 +411,7 @@ static int parse_line(char *line, char **username, char **password) {
     }
 
     // Find the password
-    *password = line;
+    char *password_start = line;
     int password_length = 1;
     while (*line != DELIMITER && *line != '\n' && *line != '\0' && password_length <= MAX_PASSWORD_LENGTH) {
         line++;
@@ -354,6 +426,9 @@ static int parse_line(char *line, char **username, char **password) {
     // Null terminate the password
     *line = '\0';
 
+    // Copy the password
+    strcpy(password, password_start);
+
     return 0;
 }
 
@@ -362,6 +437,8 @@ static int parse_line(char *line, char **username, char **password) {
 static int load_users(user_manager_t user_manager, FILE *users_file) {
     char line[MAX_USERNAME_LENGTH + MAX_PASSWORD_LENGTH + 2];
     char *username, *password;
+
+    user_list_t last_user = NULL;
 
     while (fgets(line, sizeof(line), users_file) != NULL) {
         // Parse the username and password from each line
@@ -373,7 +450,7 @@ static int load_users(user_manager_t user_manager, FILE *users_file) {
             return -1;
         }
 
-        bool parse_error = parse_line(line, &username, &password) == -1;
+        bool parse_error = parse_line(line, username, password) == -1;
 
         if (parse_error) {
             free(username);
@@ -396,10 +473,17 @@ static int load_users(user_manager_t user_manager, FILE *users_file) {
         new_user->password = password;
         new_user->is_locked = false;
 
-        // Add the user to the front of the list
-        new_user->next = user_manager->user_list;
-        user_manager->user_list = new_user;
+        // Add the user to the end of the list
+        if (last_user == NULL) {
+            user_manager->user_list = new_user;
+        } else {
+            last_user->next = new_user;
+        }
+
+        last_user = new_user;
     }
+
+    last_user->next = NULL;
 
     return 0;
 }
@@ -414,9 +498,53 @@ static int save_users(user_manager_t user_manager, FILE *users_file) {
         if (fprintf(users_file, "%s%c%s\n", current_user->username, DELIMITER, current_user->password) < 0) {
             return -1;
         }
-        
 
         current_user = current_user->next;
+    }
+
+    return 0;
+}
+
+// Function to delete a directory and all its contents
+// The directory should not contain any subdirectories
+int delete_directory(const char *directory_path) {
+
+    DIR *dir = opendir(directory_path);
+    if (dir == NULL) {
+        return -1;
+    }
+
+    struct dirent *entry;
+    struct stat file_stat;
+
+    // Delete files within the directory
+    while ((entry = readdir(dir)) != NULL) {
+
+        int file_path_length = strlen(directory_path) + strlen(entry->d_name) + 2;
+        char file_path[file_path_length];
+
+        strcpy(file_path, directory_path);
+        strcat(file_path, "/");
+        strcat(file_path, entry->d_name);
+
+        if (lstat(file_path, &file_stat) == -1) {
+            closedir(dir);
+            return -1;
+        }
+
+        if (S_ISREG(file_stat.st_mode)) {
+            if (unlink(file_path) == -1) {
+                closedir(dir);
+                return -1;
+            }
+        }
+    }
+
+    closedir(dir);
+
+    // Delete the empty directory itself
+    if (rmdir(directory_path) == -1) {
+        return -1;
     }
 
     return 0;

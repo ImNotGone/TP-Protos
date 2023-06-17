@@ -295,13 +295,13 @@ int user_manager_login(user_manager_t user_manager, const char *username, const 
         return -1;
     }
 
-    if (current_user->is_locked) {
+    if (strcmp(current_user->password, password) != 0) {
         errno = EACCES;
         return -1;
     }
 
-    if (strcmp(current_user->password, password) != 0) {
-        errno = EACCES;
+    if (current_user->is_locked) {
+        errno = EBUSY;
         return -1;
     }
 
@@ -358,7 +358,7 @@ static void free_user_list(user_list_t user_list) {
 }
 
 // Function to parse a line from the users file
-static int parse_line(char *line, char **username, char **password) {
+static int parse_line(char *line, char *username, char *password) {
 
     // Ignore whitespace
     while (*line == ' ' || *line == '\t') {
@@ -376,7 +376,7 @@ static int parse_line(char *line, char **username, char **password) {
     }
 
     // Find the username
-    *username = line;
+    char *username_start = line;
     int username_length = 1;
     while (*line != DELIMITER && *line != '\n' && *line != '\0' && username_length <= MAX_USERNAME_LENGTH) {
         line++;
@@ -393,8 +393,11 @@ static int parse_line(char *line, char **username, char **password) {
         return -1;
     }
 
-    // Null terminate the username
+    // Replace the delimiter with a null terminator
     *line = '\0';
+
+    // Copy the username
+    strcpy(username, username_start);
 
     // Ignore whitespace
     line++;
@@ -408,7 +411,7 @@ static int parse_line(char *line, char **username, char **password) {
     }
 
     // Find the password
-    *password = line;
+    char *password_start = line;
     int password_length = 1;
     while (*line != DELIMITER && *line != '\n' && *line != '\0' && password_length <= MAX_PASSWORD_LENGTH) {
         line++;
@@ -423,6 +426,9 @@ static int parse_line(char *line, char **username, char **password) {
     // Null terminate the password
     *line = '\0';
 
+    // Copy the password
+    strcpy(password, password_start);
+
     return 0;
 }
 
@@ -431,6 +437,8 @@ static int parse_line(char *line, char **username, char **password) {
 static int load_users(user_manager_t user_manager, FILE *users_file) {
     char line[MAX_USERNAME_LENGTH + MAX_PASSWORD_LENGTH + 2];
     char *username, *password;
+
+    user_list_t last_user = NULL;
 
     while (fgets(line, sizeof(line), users_file) != NULL) {
         // Parse the username and password from each line
@@ -442,7 +450,7 @@ static int load_users(user_manager_t user_manager, FILE *users_file) {
             return -1;
         }
 
-        bool parse_error = parse_line(line, &username, &password) == -1;
+        bool parse_error = parse_line(line, username, password) == -1;
 
         if (parse_error) {
             free(username);
@@ -465,10 +473,17 @@ static int load_users(user_manager_t user_manager, FILE *users_file) {
         new_user->password = password;
         new_user->is_locked = false;
 
-        // Add the user to the front of the list
-        new_user->next = user_manager->user_list;
-        user_manager->user_list = new_user;
+        // Add the user to the end of the list
+        if (last_user == NULL) {
+            user_manager->user_list = new_user;
+        } else {
+            last_user->next = new_user;
+        }
+
+        last_user = new_user;
     }
+
+    last_user->next = NULL;
 
     return 0;
 }

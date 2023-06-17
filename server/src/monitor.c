@@ -139,8 +139,12 @@ int monitor_set_max_conns(unsigned val){
     return 0;
 }
 
+int monitor_change_user_username(char * old_username, char * new_username){
+    return user_manager_change_username(old_username, new_username);
+}
+
 int monitor_change_user_password(char * username, char * new_pass){
-    assert(0 && "Unimplemented");
+    return user_manager_change_password(username, new_pass);
 }
 
 int monitor_delete_user(char * username) {

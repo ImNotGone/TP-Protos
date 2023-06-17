@@ -13,6 +13,7 @@
 #include <states/authorization.h>
 #include <states/transaction.h>
 #include <states/update.h>
+#include <states/close-connection.h>
 #include <pop3.h>
 #include <parser.h>
 
@@ -60,7 +61,7 @@ static const struct state_definition client_states[] = {
     },
     {
         .state = CLOSE_CONNECTION,
-        .on_arrival =       NULL,
+        .on_arrival =       close_connection_on_arrival,
         .on_departure =     NULL,
         .on_read_ready =    NULL,
         .on_write_ready =   NULL,
@@ -160,7 +161,7 @@ static void pop3_client_read(struct selector_key * key) {
     client_t * client_data = CLIENT_DATA(key);
     state_machine_t * state_machine = &client_data->state_machine;
     const states_t st = state_machine_handler_read(state_machine, key);
-    if(st == ERROR || st == CLOSE_CONNECTION) {
+    if(st == ERROR) {
         log(LOGGER_ERROR, "error handling read for client with sd:%d", client_data->client_sd);
         close_connection(key);
     }
@@ -170,7 +171,7 @@ static void pop3_client_write(struct selector_key * key) {
     client_t * client_data = CLIENT_DATA(key);
     state_machine_t * state_machine = &client_data->state_machine;
     const states_t st = state_machine_handler_write(state_machine, key);
-    if(st == ERROR || st == CLOSE_CONNECTION) {
+    if(st == ERROR) {
         log(LOGGER_ERROR, "error handling write for client with sd:%d", client_data->client_sd);
         close_connection(key);
     }

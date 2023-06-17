@@ -124,6 +124,9 @@ int user_manager_free(user_manager_t user_manager) {
 
     free_user_list(user_manager->user_list);
 
+    free(user_manager->users_file_path);
+    free(user_manager->maildrop_parent_path);
+
     free(user_manager);
 
     return 0;

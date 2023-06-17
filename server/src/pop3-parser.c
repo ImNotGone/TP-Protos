@@ -105,7 +105,7 @@ static struct parser_configuration pop3_parser_configuration = {
     .start_state  = PARSER_START,
 };
 
-struct parser_configuration * pop3_parser_configuration_get() {
+struct parser_configuration * pop3_parser_configuration_get(void) {
     return &pop3_parser_configuration;
 }
 

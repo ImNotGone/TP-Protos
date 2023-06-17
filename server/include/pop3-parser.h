@@ -12,7 +12,7 @@ typedef enum parser_states {
     PARSER_IN_NEWLINE
 } parser_states_t;
 
-struct parser_configuration * pop3_parser_configuration_get();
+struct parser_configuration * pop3_parser_configuration_get(void);
 
 void pop3_parser_reset_event(struct parser_event * event);
 

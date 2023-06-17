@@ -42,7 +42,7 @@ int user_manager_create(char* users_file_path, char* maildrop_parent_path);
 //   The user manager saves all the users in memory to the users file
 //   If the users file does not exist, it is created
 //   Any users in the users file that are not in memory are also deleted
-int user_manager_free();
+int user_manager_free(void);
 
 // Creates a user in the user manager
 // Parameters:
@@ -114,12 +114,12 @@ int user_manager_logout(const char* username);
 // ================= Used for testing =================
 // Gets the internal list of users
 typedef struct user_list_cdt *user_list_t;
-user_list_t user_manager_get_users();
+user_list_t user_manager_get_users(void);
 
 // Gets the internal value of the user manager's users file path
-char* user_manager_get_users_file_path();
+char* user_manager_get_users_file_path(void);
 
 // Gets the internal value of the user manager's maildrop parent path
-char* user_manager_get_maildrop_parent_path();
+char* user_manager_get_maildrop_parent_path(void);
 
 #endif // USER_MANAGER_H

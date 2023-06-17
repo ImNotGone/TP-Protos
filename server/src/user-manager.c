@@ -91,7 +91,7 @@ int user_manager_create(char *users_file_path, char *maildrop_parent_path) {
 }
 
 // Frees the given user manager
-int user_manager_free() {
+int user_manager_free(void) {
 
     // Creates or truncates the users file
     FILE *users_file = fopen(user_manager_users_file_path, "w");
@@ -537,15 +537,15 @@ int delete_directory(const char *directory_path) {
 }
 
 // ========== Used for testing ==========
-user_list_t user_manager_get_users() {
+user_list_t user_manager_get_users(void) {
     return user_manager_user_list;
 }
 
-char* user_manager_get_users_file_path() {
+char* user_manager_get_users_file_path(void) {
     return user_manager_users_file_path;
 }
 
-char* user_manager_get_maildrop_parent_path() {
+char* user_manager_get_maildrop_parent_path(void) {
     return user_manager_maildrop_parent_path;
 }
 

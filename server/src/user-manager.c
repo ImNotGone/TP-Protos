@@ -8,6 +8,8 @@
 #include <sys/stat.h>
 #include <user-manager.h>
 
+#define BLOCK 10
+
 // ============ User list ============
 struct user_list_cdt {
     char *username;
@@ -535,6 +537,32 @@ int delete_directory(const char *directory_path) {
 
     return 0;
 }
+
+char ** user_manager_get_usernames(void){
+    char ** usernames = NULL;
+
+    int i = 0;
+    user_list_t aux = user_manager_user_list;
+    for(; aux != NULL; i++, aux = aux->next){
+        if(i % BLOCK == 0){
+            usernames = realloc(usernames, sizeof(char*) * (i + BLOCK));
+            if(usernames == NULL){
+                errno = ENOMEM;
+                return NULL;
+            }
+        }
+        usernames[i] = aux->username;
+    }
+    usernames = realloc(usernames, sizeof(char*) * (i + 1));
+    if(usernames == NULL){
+        errno = ENOMEM;
+        return NULL;
+    }
+    usernames[i] = NULL;
+
+    return usernames;
+}
+
 
 // ========== Used for testing ==========
 user_list_t user_manager_get_users(void) {

@@ -110,6 +110,13 @@ int user_manager_login(const char* username, const char* password);
 //   specified in the pop3 rfc
 int user_manager_logout(const char* username);
 
+// Gets the usernames of all users present in the list
+// Returns:
+//  A NULL terminated array of strings containing the usernames
+//  NULL on failure
+// Errors:
+//  ENOMEM: Not enough memory to create the array
+char ** user_manager_get_usernames(void);
 
 // ================= Used for testing =================
 // Gets the internal list of users

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <errno.h>
+#include <user-manager.h>
 
 #define NULL_CHECK { \
     if(monitor == NULL){     \
@@ -122,8 +123,8 @@ int monitor_add_connection(char * username, char * date_hour){
     return 0;
 }
 
-int monitor_add_user(char * username){
-    assert(0 && "Unimplemented");
+int monitor_add_user(char * username, char * password){
+    return user_manager_create_user(username, password);
 }
 
 int monitor_set_max_users(unsigned val){
@@ -143,7 +144,11 @@ int monitor_change_user_password(char * username, char * new_pass){
 }
 
 int monitor_delete_user(char * username) {
-    assert(0 && "Unimplemented");
+    return user_manager_delete_user(username);
+}
+
+char ** monitor_get_usernames(void){
+    return user_manager_get_usernames();
 }
 
 static void freeList(logs_t first) {

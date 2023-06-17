@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <errno.h>
+#include <user-manager.h>
 
 #define NULL_CHECK { \
     if(monitor == NULL){     \

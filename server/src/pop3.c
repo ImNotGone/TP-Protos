@@ -12,6 +12,7 @@
 #include <states/greeting.h>
 #include <states/authorization.h>
 #include <states/transaction.h>
+#include <states/update.h>
 #include <pop3.h>
 #include <parser.h>
 
@@ -43,10 +44,10 @@ static const struct state_definition client_states[] = {
     },
     {
         .state = UPDATE,
-        .on_arrival =       NULL,
+        .on_arrival =       update_on_arrival,
         .on_departure =     NULL,
         .on_read_ready =    NULL,
-        .on_write_ready =   NULL,
+        .on_write_ready =   update_write,
         .on_block_ready =   NULL,
     },
     {

@@ -47,18 +47,20 @@ static states_t handle_dele(client_t * client_data, char * unused1, int unused2 
 }
 static states_t handle_noop(client_t * client_data, char * unused1, int unused2 , char * unused3, int unused4) {
     client_data->response_index=0;
-    client_data->response=RESPONSE_USER;
+    client_data->response=RESPONSE_TRANSACTION_NOOP;
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
     return TRANSACTION;
 }
 static states_t handle_rset(client_t * client_data, char * unused1, int unused2 , char * unused3, int unused4) {
     //TODO unmark deleted emails when ADT is ready
     client_data->response_index=0;
-    client_data->response=RESPONSE_USER; //TODO RFC says possible outcome +OK but in example there is more text on the server response to the client
+    //TODO RFC says possible outcome +OK but in example there is more text on the server response to the client
+    client_data->response=RESPONSE_TRANSACTION_RSET;
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
     return TRANSACTION;
 }
 static states_t handle_quit(client_t * client_data, char * unused1, int unused2 , char * unused3, int unused4) {
-    assert(0 && "Unimplemented");
+    // Go to update state for it to be handled there
+    return UPDATE;
 }
 

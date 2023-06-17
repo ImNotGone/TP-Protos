@@ -129,11 +129,13 @@ int monitor_add_user(char * username){
 int monitor_set_max_users(unsigned val){
     NULL_CHECK
     monitor->config->max_users=val;
+    return 0;
 }
 
 int monitor_set_max_conns(unsigned val){
     NULL_CHECK
     monitor->config->max_conns=val;
+    return 0;
 }
 
 int monitor_change_user_password(char * username, char * new_pass){

@@ -130,26 +130,28 @@ command_t * states_common_buffer_find_command(struct selector_key * key, char * 
 
     // voy procesando la entrada a medida que puedo
     while (buffer_can_read(&client_data->buffer_in)) {
-        *parser_event = parser_consume(client_data->parser, buffer_read(&client_data->buffer_in));
+        (*parser_event) = parser_consume(client_data->parser, buffer_read(&client_data->buffer_in));
 
-        if((*parser_event)->type == PARSER_ERROR) {
+        // sigo parseando
+        if((*parser_event)->parsing_status != DONE) {
+            continue;
+        }
+
+        if((*parser_event)->has_errors) {
             log(LOGGER_ERROR, "parsing command on state:%s from sd:%d", state, key->fd);
             return &unknown_command;
         }
 
-        // Si termine el parsing busco el comando
-        if((*parser_event)->type == PARSER_IN_NEWLINE) {
-            command = get_command(client_data, *parser_event, commands, cant_commands);
+        command = get_command(client_data, (*parser_event), commands, cant_commands);
 
-            // Si no encontre el comando pongo la response de unknown_command
-            if(command == NULL) {
-                log(LOGGER_ERROR, "command not supported on state:%s for sd:%d", state, key->fd);
-                command = &unknown_command;
-            }
-
-            // Retorno el comando encontrado
-            return command;
+        // Si no encontre el comando pongo la response de unknown_command
+        if(command == NULL) {
+            log(LOGGER_ERROR, "command not supported on state:%s for sd:%d", state, key->fd);
+            command = &unknown_command;
         }
+
+        // Retorno el comando encontrado
+        return command;
     }
 
     // No lo encontre -> retorno null

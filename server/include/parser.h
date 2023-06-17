@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 // per RFC 1939 (considering max len for commands and arguments)
 // TODO: ver la max cant de arguments
@@ -10,11 +11,19 @@
 #define MAX_ARG_LEN     40
 #define MAX_ARG_COUNT   2
 
+typedef enum {
+    PARSING,
+    DONE,
+} parsing_status_t;
+
 struct parser_event {
-    unsigned type;
-    uint8_t cmd[MAX_COMMAND_LEN];
+    parsing_status_t parsing_status;
+    bool has_errors;
+    // extra space for '\0' terminator
+    uint8_t cmd[MAX_COMMAND_LEN + 1];
     uint8_t cmd_len;
-    uint8_t args[MAX_ARG_COUNT][MAX_ARG_LEN];
+    // extra space for '\0' terminator
+    uint8_t args[MAX_ARG_COUNT][MAX_ARG_LEN + 1];
     uint8_t args_len[MAX_ARG_COUNT];
     uint8_t argc;
     struct parser_event * next;

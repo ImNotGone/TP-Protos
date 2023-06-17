@@ -5,7 +5,6 @@
 
 typedef enum parser_states {
     PARSER_START,
-    PARSER_ERROR,
     PARSER_PROCESSING_COMAND,
     PARSER_PROCESSING_ARGS,
     PARSER_IN_CR,

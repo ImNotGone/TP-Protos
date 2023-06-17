@@ -52,7 +52,8 @@ static states_t handle_user(client_t * client_data, char * user, int user_len, c
     client_data->user = NULL;
     if(user_len != 0) {
         client_data->user = calloc(user_len + 1, sizeof(char));
-        strcpy(client_data->user, user);
+        // strcpy should be fine, since user is a null terminated string now
+        strncpy(client_data->user, user, user_len);
     }
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
     return AUTHORIZATION;

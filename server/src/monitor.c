@@ -2,6 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <errno.h>
+
+#define NULL_CHECK { \
+    if(monitor == NULL){     \
+    return -1;               \
+    }\
+}
 
 typedef struct logsCDT{
     char * username;
@@ -34,52 +41,106 @@ typedef struct monitorCDT{
     logs_t last_log; // used for insertion
 }monitorCDT;
 
-//TODO: check if parameters are zero
-monitor_t monitor_init(unsigned max_users, unsigned max_conns, unsigned queued_conns){
-    monitor_t new = calloc(1, sizeof(monitorCDT));
+typedef struct monitorCDT * monitor_t;
+
+static monitor_t monitor = NULL;
+
+int monitor_init(unsigned max_users, unsigned max_conns, unsigned queued_conns){
+    if(max_users == 0 || max_conns == 0 || queued_conns == 0){
+        errno = EINVAL;
+        return -1;
+    }
+
+    monitor = calloc(1, sizeof(monitorCDT));
+
+    if(monitor == NULL){
+        errno=ENOMEM;
+        return -1;
+    }
 
     metrics_t metrics = calloc(1, sizeof(metricsCDT));
+
+    if(metrics == NULL){
+        free(monitor);
+        monitor = NULL;
+        errno=ENOMEM;
+        return -1;
+    }
+
     config_t config = malloc(sizeof(configCDT));
+
+    if(config == NULL){
+        free(metrics);
+        free(monitor);
+        monitor = NULL;
+        errno=ENOMEM;
+        return -1;
+    }
 
     config->max_users=max_users;
     config->max_conns=max_conns;
     config->queued_conns=queued_conns;
 
-    new->metrics=metrics;
-    new->config=config;
+    monitor->metrics=metrics;
+    monitor->config=config;
 
-    return new;
+    return 0;
 }
 
-//TODO: check nulls
-void monitor_add_connection(monitor_t monitor, char * username, char * date_hour){
-    monitor->metrics->historic_conns++;
-    monitor->metrics->current_conns++;
+int monitor_add_connection(char * username, char * date_hour){
+    NULL_CHECK
+
+    if(username == NULL || date_hour == NULL){
+        errno = EINVAL;
+        return -1;
+    }
+
     logs_t new_node = malloc(sizeof(logsCDT));
+
+    if(new_node == NULL){
+        errno=ENOMEM;
+        return -1;
+    }
+
     new_node->username = username;
     new_node->date_hour = date_hour;
     new_node->next = NULL;
-    monitor->last_log->next = new_node;
-    monitor->last_log  = new_node;
+
+    if(monitor->first_log == NULL){
+        monitor->first_log  = new_node;
+    }
+
+    if(monitor->last_log != NULL){
+        monitor->last_log->next = new_node;
+    }
+
+    monitor->last_log = new_node;
+
+    monitor->metrics->historic_conns++;
+    monitor->metrics->current_conns++;
+
+    return 0;
 }
 
-void monitor_add_user(monitor_t motnitor, char * username){
+int monitor_add_user(char * username){
     assert(0 && "Unimplemented");
 }
 
-void monitor_set_max_users(monitor_t monitor, unsigned val){
+int monitor_set_max_users(unsigned val){
+    NULL_CHECK
     monitor->config->max_users=val;
 }
 
-void monitor_set_max_conns(monitor_t monitor, unsigned val){
+int monitor_set_max_conns(unsigned val){
+    NULL_CHECK
     monitor->config->max_conns=val;
 }
 
-void monitor_change_user_password(monitor_t monitor, char * username, char * new_pass){
+int monitor_change_user_password(char * username, char * new_pass){
     assert(0 && "Unimplemented");
 }
 
-void monitor_delete_user(monitor_t monitor, char * username) {
+int monitor_delete_user(char * username) {
     assert(0 && "Unimplemented");
 }
 
@@ -89,10 +150,11 @@ static void freeList(logs_t first) {
     free(first);
 }
 
-void monitor_destroy(monitor_t monitor) {
-    //TODO: revisar
+int monitor_destroy(void) {
+    NULL_CHECK
     freeList(monitor->first_log);
     free(monitor->metrics);
     free(monitor->config);
     free(monitor);
+    return 0;
 }

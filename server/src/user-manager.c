@@ -9,7 +9,6 @@
 #include <user-manager.h>
 
 // ============ User list ============
-typedef struct user_list_cdt *user_list_t;
 struct user_list_cdt {
     char *username;
     char *password;
@@ -22,26 +21,26 @@ struct user_list_cdt {
 // ============== Private functions ==============
 static void free_user_list(user_list_t user_list);
 
-static int load_users(user_manager_t user_manager, FILE *users_file);
-static int save_users(user_manager_t user_manager, FILE *users_file);
+static int load_users(FILE *users_file);
+static int save_users(FILE *users_file);
 static int delete_directory(const char *directory_path);
 
-// ============ User manager ============
+// ============ User manager fields ============
 
-struct user_manager_cdt {
-    user_list_t user_list;
+static user_list_t user_manager_user_list;
 
-    char *users_file_path;
-    char *maildrop_parent_path;
-};
+static char *user_manager_users_file_path;
+static char *user_manager_maildrop_parent_path;
+
+// ============ User manager functions ============
 
 // Creates a new user manager
-user_manager_t user_manager_create(char *users_file_path, char *maildrop_parent_path) {
+int user_manager_create(char *users_file_path, char *maildrop_parent_path) {
 
     // Checks the parameters
     if (users_file_path == NULL || maildrop_parent_path == NULL) {
         errno = EINVAL;
-        return NULL;
+        return -1;
     }
 
     // Check maildrop directory existence
@@ -49,64 +48,53 @@ user_manager_t user_manager_create(char *users_file_path, char *maildrop_parent_
 
     if (maildrop_parent_dir == NULL) {
         errno = ENOENT;
-        return NULL;
+        return -1;
     }
     closedir(maildrop_parent_dir);
 
-    user_manager_t new_user_manager = malloc(sizeof(struct user_manager_cdt));
+    user_manager_users_file_path = malloc(strlen(users_file_path) + 1);
 
-    if (new_user_manager == NULL) {
+    if (user_manager_users_file_path == NULL) {
         errno = ENOMEM;
-        return NULL;
+        return -1;
     }
 
-    new_user_manager->users_file_path = malloc(strlen(users_file_path) + 1);
+    strcpy(user_manager_users_file_path, users_file_path);
 
-    if (new_user_manager->users_file_path == NULL) {
-        free(new_user_manager);
+    user_manager_maildrop_parent_path = malloc(strlen(maildrop_parent_path) + 1);
+
+    if (user_manager_maildrop_parent_path == NULL) {
+        free(user_manager_users_file_path);
         errno = ENOMEM;
-        return NULL;
+        return -1;
     }
 
-    strcpy(new_user_manager->users_file_path, users_file_path);
-
-    new_user_manager->maildrop_parent_path = malloc(strlen(maildrop_parent_path) + 1);
-
-    if (new_user_manager->maildrop_parent_path == NULL) {
-        free(new_user_manager->users_file_path);
-        free(new_user_manager);
-        errno = ENOMEM;
-        return NULL;
-    }
-
-    strcpy(new_user_manager->maildrop_parent_path, maildrop_parent_path);
+    strcpy(user_manager_maildrop_parent_path, maildrop_parent_path);
 
     // Loads the users from the users file
-    new_user_manager->user_list = NULL;
+    user_manager_user_list = NULL;
     FILE *users_file = fopen(users_file_path, "r");
 
     if (users_file != NULL) {
-        bool load_error = load_users(new_user_manager, users_file) == -1;
+        bool load_error = load_users(users_file) == -1;
         fclose(users_file);
 
         if (load_error) {
-            free_user_list(new_user_manager->user_list);
-            free(new_user_manager);
-            return NULL;
+            free_user_list(user_manager_user_list);
+            free(user_manager_users_file_path);
+            free(user_manager_maildrop_parent_path);
+            return -1;
         }
     }
 
-    return new_user_manager;
+    return 0;
 }
 
 // Frees the given user manager
-int user_manager_free(user_manager_t user_manager) {
-    if (user_manager == NULL) {
-        return 0;
-    }
+int user_manager_free() {
 
     // Creates or truncates the users file
-    FILE *users_file = fopen(user_manager->users_file_path, "w");
+    FILE *users_file = fopen(user_manager_users_file_path, "w");
 
     if (users_file == NULL) {
         errno = EIO;
@@ -114,7 +102,7 @@ int user_manager_free(user_manager_t user_manager) {
     }
 
     // Adds the users to the users file
-    if (save_users(user_manager, users_file) == -1) {
+    if (save_users(users_file) == -1) {
         fclose(users_file);
         errno = EIO;
         return -1;
@@ -122,19 +110,17 @@ int user_manager_free(user_manager_t user_manager) {
 
     fclose(users_file);
 
-    free_user_list(user_manager->user_list);
+    free_user_list(user_manager_user_list);
 
-    free(user_manager->users_file_path);
-    free(user_manager->maildrop_parent_path);
-
-    free(user_manager);
+    free(user_manager_users_file_path);
+    free(user_manager_maildrop_parent_path);
 
     return 0;
 }
 
 // Creates a user in the user manager
-int user_manager_create_user(user_manager_t user_manager, const char *username, const char *password) {
-    if (user_manager == NULL || username == NULL || password == NULL) {
+int user_manager_create_user(const char *username, const char *password) {
+    if (username == NULL || password == NULL) {
         errno = EINVAL;
         return -1;
     }
@@ -154,7 +140,7 @@ int user_manager_create_user(user_manager_t user_manager, const char *username, 
     }
 
     // Checks if the user already exists
-    user_list_t current_user = user_manager->user_list;
+    user_list_t current_user = user_manager_user_list;
 
     while (current_user != NULL) {
         if (strcmp(current_user->username, username) == 0) {
@@ -191,10 +177,10 @@ int user_manager_create_user(user_manager_t user_manager, const char *username, 
     new_user->is_locked = false;
 
     // Creates the user's maildrop
-    int maildrop_path_length = strlen(user_manager->maildrop_parent_path) + strlen(username) + 1;
+    int maildrop_path_length = strlen(user_manager_maildrop_parent_path) + strlen(username) + 1;
     char maildrop_path[maildrop_path_length];
 
-    strcpy(maildrop_path, user_manager->maildrop_parent_path);
+    strcpy(maildrop_path, user_manager_maildrop_parent_path);
     strcat(maildrop_path, username);
 
     if (mkdir(maildrop_path, 0700) == -1) {
@@ -207,21 +193,21 @@ int user_manager_create_user(user_manager_t user_manager, const char *username, 
     }
 
     // Adds the user to the front of the user list
-    new_user->next = user_manager->user_list;
-    user_manager->user_list = new_user;
+    new_user->next = user_manager_user_list;
+    user_manager_user_list = new_user;
 
     return 0;
 }
 
 // Deletes a user from the user manager
-int user_manager_delete_user(user_manager_t user_manager, const char *username) {
-    if (user_manager == NULL || username == NULL) {
+int user_manager_delete_user(const char *username) {
+    if (username == NULL) {
         errno = EINVAL;
         return -1;
     }
 
     // Finds the user
-    user_list_t current_user = user_manager->user_list;
+    user_list_t current_user = user_manager_user_list;
     user_list_t previous_user = NULL;
     bool user_found = false;
 
@@ -246,10 +232,10 @@ int user_manager_delete_user(user_manager_t user_manager, const char *username) 
     }
 
     // Deletes the user's maildrop
-    int maildrop_path_length = strlen(user_manager->maildrop_parent_path) + strlen(username) + 1;
+    int maildrop_path_length = strlen(user_manager_maildrop_parent_path) + strlen(username) + 1;
     char maildrop_path[maildrop_path_length];
 
-    strcpy(maildrop_path, user_manager->maildrop_parent_path);
+    strcpy(maildrop_path, user_manager_maildrop_parent_path);
     strcat(maildrop_path, username);
 
     if (delete_directory(maildrop_path) == -1) {
@@ -259,7 +245,7 @@ int user_manager_delete_user(user_manager_t user_manager, const char *username) 
 
     // Deletes the user
     if (previous_user == NULL) {
-        user_manager->user_list = current_user->next;
+        user_manager_user_list = current_user->next;
     } else {
         previous_user->next = current_user->next;
     }
@@ -272,14 +258,14 @@ int user_manager_delete_user(user_manager_t user_manager, const char *username) 
 }
 
 // Logs a user into the user manager
-int user_manager_login(user_manager_t user_manager, const char *username, const char *password) {
-    if (user_manager == NULL || username == NULL || password == NULL) {
+int user_manager_login(const char *username, const char *password) {
+    if (username == NULL || password == NULL) {
         errno = EINVAL;
         return -1;
     }
 
     // Finds the user
-    user_list_t current_user = user_manager->user_list;
+    user_list_t current_user = user_manager_user_list;
     bool user_found = false;
 
     while (current_user != NULL && !user_found) {
@@ -311,14 +297,14 @@ int user_manager_login(user_manager_t user_manager, const char *username, const 
 }
 
 // Logs a user out of the user manager
-int user_manager_logout(user_manager_t user_manager, const char *username) {
-    if (user_manager == NULL || username == NULL) {
+int user_manager_logout(const char *username) {
+    if (username == NULL) {
         errno = EINVAL;
         return -1;
     }
 
     // Finds the user
-    user_list_t current_user = user_manager->user_list;
+    user_list_t current_user = user_manager_user_list;
     bool user_found = false;
 
     while (current_user != NULL && !user_found) {
@@ -434,7 +420,7 @@ static int parse_line(char *line, char *username, char *password) {
 
 // Function to load the users from the users file
 // Users file is not closed by this function
-static int load_users(user_manager_t user_manager, FILE *users_file) {
+static int load_users(FILE *users_file) {
     char line[MAX_USERNAME_LENGTH + MAX_PASSWORD_LENGTH + 2];
     char *username, *password;
 
@@ -475,7 +461,7 @@ static int load_users(user_manager_t user_manager, FILE *users_file) {
 
         // Add the user to the end of the list
         if (last_user == NULL) {
-            user_manager->user_list = new_user;
+            user_manager_user_list = new_user;
         } else {
             last_user->next = new_user;
         }
@@ -490,8 +476,8 @@ static int load_users(user_manager_t user_manager, FILE *users_file) {
 
 // Function to save the users to the users file
 // Users file is not closed by this function
-static int save_users(user_manager_t user_manager, FILE *users_file) {
-    user_list_t current_user = user_manager->user_list;
+static int save_users(FILE *users_file) {
+    user_list_t current_user = user_manager_user_list;
 
     while (current_user != NULL) {
         // Write username and password to the users file
@@ -549,3 +535,18 @@ int delete_directory(const char *directory_path) {
 
     return 0;
 }
+
+// ========== Used for testing ==========
+user_list_t user_manager_get_users() {
+    return user_manager_user_list;
+}
+
+char* user_manager_get_users_file_path() {
+    return user_manager_users_file_path;
+}
+
+char* user_manager_get_maildrop_parent_path() {
+    return user_manager_maildrop_parent_path;
+}
+
+

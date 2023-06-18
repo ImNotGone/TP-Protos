@@ -26,11 +26,13 @@ on-type]
 */
 static states_t handle_user(client_t * client_data, char * user,    int user_len, char * unused1, int unused2);
 static states_t handle_pass(client_t * client_data, char * pass,    int unused1 , char * unused2, int unused3);
+static states_t handle_capa(client_t * client_data, char * unused1, int unused2 , char * unused3, int unused4);
 static states_t handle_quit(client_t * client_data, char * unused1, int unused2 , char * unused3, int unused4);
 
 static command_t commands[] = {
     {.name = "user", .command_handler = handle_user},
     {.name = "pass", .command_handler = handle_pass},
+    {.name = "capa", .command_handler = handle_capa},
     {.name = "quit", .command_handler = handle_quit},
 };
 
@@ -71,6 +73,14 @@ static states_t handle_pass(client_t * client_data, char * pass, int unused1, ch
         return TRANSACTION;
     }
     client_data->response = RESPONSE_PASS_ERROR;
+    states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+    return AUTHORIZATION;
+}
+
+
+static states_t handle_capa(client_t * client_data, char * unused1, int unused2 , char * unused3, int unused4) {
+    client_data->response_index = 0;
+    client_data->response = RESPONSE_AUTH_CAPA;
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
     return AUTHORIZATION;
 }

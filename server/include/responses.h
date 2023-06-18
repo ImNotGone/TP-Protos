@@ -2,6 +2,7 @@
 #define RESPONSES_H
 
 #define CRLF "\r\n"
+#define DOT_CRLF "."CRLF
 
 #define OK_HEADER "+OK"
 #define ERROR_HEADER "-ERR"
@@ -20,6 +21,17 @@
 
 #define RESPONSE_PASS_ERROR     ERROR_HEADER" AUTHENTICATION FAILED"CRLF
 #define RESPONSE_PASS_SUCCESS   OK_HEADER" AUTHORIZED"CRLF
+
+// CAPABILITIES
+// CAPA (suporteo el comando capa)
+// USER (suporteo login con comandos USER PASS)
+// PIPELINING
+#define RESPONSE_AUTH_CAPA      OK_HEADER""CRLF     \
+                                "CAPA"CRLF          \
+                                "USER"CRLF          \
+                                "PIPELINING"CRLF    \
+                                DOT_CRLF
+
 
 #define RESPONSE_AUTH_QUIT      OK_HEADER" QUITING"CRLF
 

@@ -25,7 +25,7 @@
 // CAPABILITIES
 // CAPA (suporteo el comando capa)
 // USER (suporteo login con comandos USER PASS)
-// PIPELINING
+// PIPELINING (suporteo pipelining)
 #define RESPONSE_AUTH_CAPA      OK_HEADER""CRLF     \
                                 "CAPA"CRLF          \
                                 "USER"CRLF          \
@@ -37,8 +37,17 @@
 
 
 // TRANSACTION COMMANDS RESPONSES
-#define RESPONSE_TRANSACTION_NOOP RESPONSE_OK_PLAIN
-#define RESPONSE_TRANSACTION_RSET RESPONSE_OK_PLAIN
+#define RESPONSE_TRANSACTION_NOOP   RESPONSE_OK_PLAIN
+
+#define RESPONSE_TRANSACTION_RSET   RESPONSE_OK_PLAIN
+
+// CAPABILITIES
+// CAPA (suporteo el comando capa)
+// PIPELINING (suporteo pipelining)
+#define RESPONSE_TRANSACTION_CAPA   OK_HEADER""CRLF     \
+                                    "CAPA"CRLF          \
+                                    "PIPELINING"CRLF    \
+                                    DOT_CRLF
 
 // UPDATE COMMANDS RESPONSES
 #define RESPONSE_UPDATE_QUIT_ERROR    ERROR_HEADER" COULD NOT DELETE MAILS"CRLF

@@ -1,3 +1,4 @@
+#include "pop3.h"
 #include <commands.h>
 #include <states/transaction.h>
 #include <states/states-common.h>
@@ -10,6 +11,7 @@ static states_t handle_retr(client_t * client_data, char * unused1, int unused2 
 static states_t handle_dele(client_t * client_data, char * unused1, int unused2 , char * unused3, int unused4);
 static states_t handle_noop(client_t * client_data, char * unused1, int unused2 , char * unused3, int unused4);
 static states_t handle_rset(client_t * client_data, char * unused1, int unused2 , char * unused3, int unused4);
+static states_t handle_capa(client_t * client_data, char * unused1, int unused2 , char * unused3, int unused4);
 static states_t handle_quit(client_t * client_data, char * unused1, int unused2 , char * unused3, int unused4);
 
 static command_t commands[] = {
@@ -19,6 +21,7 @@ static command_t commands[] = {
     { .name = "dele", .command_handler = handle_dele},
     { .name = "noop", .command_handler = handle_noop},
     { .name = "rset", .command_handler = handle_rset},
+    { .name = "capa", .command_handler = handle_capa},
     { .name = "quit", .command_handler = handle_quit},
 };
 
@@ -59,6 +62,15 @@ static states_t handle_rset(client_t * client_data, char * unused1, int unused2 
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
     return TRANSACTION;
 }
+
+
+static states_t handle_capa(client_t * client_data, char * unused1, int unused2 , char * unused3, int unused4) {
+    client_data->response_index = 0;
+    client_data->response = RESPONSE_TRANSACTION_CAPA;
+    states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+    return TRANSACTION;
+}
+
 static states_t handle_quit(client_t * client_data, char * unused1, int unused2 , char * unused3, int unused4) {
     // Go to update state for it to be handled there
     return UPDATE;

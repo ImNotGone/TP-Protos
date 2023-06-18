@@ -118,6 +118,32 @@ int user_manager_logout(const char* username);
 //  ENOMEM: Not enough memory to create the array
 char ** user_manager_get_usernames(void);
 
+// Changes the username of a given user
+// Parameters:
+//   old_username - The username of the user to change
+//   new_username - The new username of the user
+// Returns:
+//   0 on success, -1 on failure
+// Errors:
+//   EINVAL: Any of the parameters are NULL
+//   ENOENT: A user with the given username does not exist
+//   ENOMEM: Not enough memory to create the new username
+int user_manager_change_username(char* old_username, char* new_username);
+
+
+// Changes the password of a given user
+// Parameters:
+//   username - The username of the user to change
+//   new_password - The new password of the user
+// Returns:
+//   0 on success, -1 on failure
+// Errors:
+//   EINVAL: Any of the parameters are NULL
+//   ENOENT: A user with the given username does not exist
+//   ENOMEM: Not enough memory to create the new password
+int user_manager_change_password(char* username, char* new_password);
+
+
 // ================= Used for testing =================
 // Gets the internal list of users
 typedef struct user_list_cdt *user_list_t;

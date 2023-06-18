@@ -21,6 +21,8 @@ struct user_list_cdt {
 };
 
 // ============== Private functions ==============
+static user_list_t get_user(char * username);
+
 static void free_user_list(user_list_t user_list);
 
 static int load_users(FILE *users_file);
@@ -329,7 +331,102 @@ int user_manager_logout(const char *username) {
     return 0;
 }
 
+// Gets the usernames of all the users in the user manager
+char ** user_manager_get_usernames(void){
+    char ** usernames = NULL;
+
+    int i = 0;
+    user_list_t aux = user_manager_user_list;
+    for(; aux != NULL; i++, aux = aux->next){
+        if(i % BLOCK == 0){
+            usernames = realloc(usernames, sizeof(char*) * (i + BLOCK));
+            if(usernames == NULL){
+                errno = ENOMEM;
+                return NULL;
+            }
+        }
+        usernames[i] = aux->username;
+    }
+    usernames = realloc(usernames, sizeof(char*) * (i + 1));
+    if(usernames == NULL){
+        errno = ENOMEM;
+        return NULL;
+    }
+    usernames[i] = NULL;
+
+    return usernames;
+}
+
+// Changes the username of a given user
+int user_manager_change_username(char* old_username, char* new_username){
+    if(old_username == NULL || new_username == NULL){
+        errno = EINVAL;
+        return -1;
+    }
+
+    user_list_t user = get_user(old_username);
+
+    if(user == NULL){
+        errno = ENOENT;
+        return -1;
+    }
+
+    free(user->username);
+
+    user->username = malloc(sizeof(char) * (strlen(new_username) + 1));
+    if(user->username == NULL){
+        errno = ENOMEM;
+        return -1;
+    }
+
+    strcpy(user->username, new_username);
+
+    //TODO: Make changes effective in the maildrop
+
+    return 0;
+}
+
+// Changes the password of a given user
+int user_manager_change_password(char* username, char* new_password){
+    if(username == NULL || new_password == NULL){
+        errno = EINVAL;
+        return -1;
+    }
+
+    user_list_t user = get_user(username);
+
+    if(user == NULL){
+        errno = ENOENT;
+        return -1;
+    }
+
+    free(user->password);
+
+    user->password = malloc(sizeof(char) * (strlen(new_password) + 1));
+    if(user->password == NULL){
+        errno = ENOMEM;
+        return -1;
+    }
+
+    strcpy(user->password, new_password);
+
+    //TODO: Make changes effective in the maildrop
+
+    return 0;
+}
+
+
 // ============ Private functions ============
+
+static user_list_t get_user(char * username){
+    user_list_t aux = user_manager_user_list;
+    for(; aux != NULL; aux = aux->next){
+        if(strcmp(aux->username, username) == 0){
+            return aux;
+        }
+    }
+    return NULL;
+}
 
 // Function to free the user list
 static void free_user_list(user_list_t user_list) {
@@ -536,31 +633,6 @@ int delete_directory(const char *directory_path) {
     }
 
     return 0;
-}
-
-char ** user_manager_get_usernames(void){
-    char ** usernames = NULL;
-
-    int i = 0;
-    user_list_t aux = user_manager_user_list;
-    for(; aux != NULL; i++, aux = aux->next){
-        if(i % BLOCK == 0){
-            usernames = realloc(usernames, sizeof(char*) * (i + BLOCK));
-            if(usernames == NULL){
-                errno = ENOMEM;
-                return NULL;
-            }
-        }
-        usernames[i] = aux->username;
-    }
-    usernames = realloc(usernames, sizeof(char*) * (i + 1));
-    if(usernames == NULL){
-        errno = ENOMEM;
-        return NULL;
-    }
-    usernames[i] = NULL;
-
-    return usernames;
 }
 
 

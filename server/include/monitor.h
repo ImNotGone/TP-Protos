@@ -11,6 +11,7 @@ int monitor_set_max_conns(unsigned val);
 
 char ** monitor_get_usernames(void);
 
+int monitor_change_user_username(char * old_username, char * new_username);
 int monitor_change_user_password(char * username, char * new_pass);
 
 int monitor_delete_user(char * username);

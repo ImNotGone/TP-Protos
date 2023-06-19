@@ -57,7 +57,7 @@ static states_t handle_user(client_t * client_data, char * user, int user_len, c
     } else {
         client_data->response = RESPONSE_USER_ALREADY_SPECIFIED;
     }
-
+    client_data->response_is_mallocced=false;
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
     return AUTHORIZATION;
 }
@@ -94,6 +94,7 @@ static states_t handle_pass(client_t * client_data, char * pass, int unused1, ch
 
         client_data->response = RESPONSE_PASS_SUCCESS;
         client_data->authenticated = true;
+        client_data->response_is_mallocced=false;
         states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
 
         return TRANSACTION;
@@ -128,6 +129,7 @@ static states_t handle_pass(client_t * client_data, char * pass, int unused1, ch
 static states_t handle_capa(client_t * client_data, char * unused1, int unused2 , char * unused3, int unused4) {
     client_data->response_index = 0;
     client_data->response = RESPONSE_AUTH_CAPA;
+    client_data->response_is_mallocced=false;
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
     return AUTHORIZATION;
 }
@@ -135,6 +137,7 @@ static states_t handle_capa(client_t * client_data, char * unused1, int unused2 
 static states_t handle_quit(client_t * client_data, char * unused1, int unused2, char * unused3, int unused4) {
     client_data->response_index = 0;
     client_data->response = RESPONSE_AUTH_QUIT;
+    client_data->response_is_mallocced=false;
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
     return CLOSE_CONNECTION;
 }

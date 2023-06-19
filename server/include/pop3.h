@@ -32,6 +32,7 @@ typedef struct client {
 
     bool closed;
     bool authenticated;
+    bool response_is_mallocced;
 
     struct buffer buffer_in;
     uint8_t buffer_in_data[BUFFSIZE];

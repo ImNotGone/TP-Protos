@@ -6,6 +6,7 @@
 #include <pop3-parser.h>
 #include <buffer.h>
 #include <server.h>
+#include <message-manager.h>
 
 #define CLIENT_DATA(key) ((client_t *)(key->data))
 
@@ -36,6 +37,8 @@ typedef struct client {
 
     struct buffer buffer_out;
     uint8_t buffer_out_data[BUFFSIZE];
+
+    message_manager_t message_manager;
 } client_t;
 
 void pop3_server_accept(struct selector_key* key);

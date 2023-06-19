@@ -6,6 +6,7 @@
 #include <states/states-common.h>
 #include <stdlib.h>
 #include <string.h>
+#include <message-manager.h>
 
 // no me dejaba castear, asi q estoy agregando argumentos para no me joda
 /*
@@ -59,6 +60,7 @@ static states_t handle_pass(client_t * client_data, char * pass, int unused1, ch
     bool authenticated = user_manager_login(client_data->user, pass) == 0;
 
     if (authenticated) {
+        client_data->message_manager= message_manager_create(client_data->user, MAILDROP_PATH);
         client_data->response = RESPONSE_PASS_SUCCESS;
         states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
         return TRANSACTION;

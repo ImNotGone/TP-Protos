@@ -1,6 +1,7 @@
 #include <buffer.h>
 #include <errno.h>
 #include <user-manager.h>
+#include <logger.h>
 #include <commands.h>
 #include <responses.h>
 #include <states/authorization.h>
@@ -68,13 +69,33 @@ static states_t handle_pass(client_t * client_data, char * pass, int unused1, ch
 
     if (authenticated) {
         client_data->message_manager= message_manager_create(client_data->user, MAILDROP_PATH);
-        if(client_data->message_manager==NULL){
-            //TODO log error and check return statement
+
+        
+        if (client_data->message_manager == NULL) {
+
+            switch (errno) {
+                case ENOMEM:
+                    log(LOGGER_ERROR, "Error creating message manager: Insufficient memory.");
+                    break;
+                case ENOENT:
+                    log(LOGGER_ERROR, "Error creating message manager: Maildrop directory does not exist.");
+                    break;
+                case ENOTDIR:
+                    log(LOGGER_ERROR, "Error creating message manager: Maildrop path is not a directory.");
+                    break;
+                default:
+                    log(LOGGER_ERROR, "Error creating message manager: Unknown error occurred.");
+                    break;
+            }
+
             return ERROR;
         }
+
+
         client_data->response = RESPONSE_PASS_SUCCESS;
         client_data->authenticated = true;
         states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+
         return TRANSACTION;
     }
     

@@ -1,20 +1,11 @@
 #include <buffer.h>
 #include <user-manager.h>
 #include <commands.h>
-#include <logger.h>
-#include <parser.h>
-#include <pop3-parser.h>
-#include <pop3.h>
 #include <responses.h>
-#include <selector.h>
 #include <states/authorization.h>
 #include <states/states-common.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <commands.h>
-#include <responses.h>
-#include <states/states-common.h>
 
 // no me dejaba castear, asi q estoy agregando argumentos para no me joda
 /*

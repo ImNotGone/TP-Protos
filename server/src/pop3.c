@@ -1,13 +1,9 @@
-#include <bits/stdint-uintn.h>
 #include <common.h>
 #include <selector.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/socket.h>
-#include <sys/types.h>
 #include <unistd.h>
-#include <assert.h>
 #include <logger.h>
 #include <states/greeting.h>
 #include <states/authorization.h>
@@ -15,7 +11,6 @@
 #include <states/update.h>
 #include <states/close-connection.h>
 #include <pop3.h>
-#include <parser.h>
 
 // TODO: fill handlers
 static const struct state_definition client_states[] = {

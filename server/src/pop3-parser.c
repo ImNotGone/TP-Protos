@@ -1,9 +1,7 @@
-#include <bits/stdint-uintn.h>
+#include <stdint.h>
 #include <parser.h>
 #include <ctype.h>
-#include <assert.h>
 #include <stdio.h>
-#include <string.h>
 #include <pop3-parser.h>
 #include <logger.h>
 

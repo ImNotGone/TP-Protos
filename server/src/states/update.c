@@ -5,6 +5,7 @@
 #include <pop3.h>
 #include <sys/socket.h>
 #include <logger.h>
+#include <message-manager.h>
 
 
 void update_on_arrival(states_t state, struct selector_key * key) {
@@ -14,9 +15,7 @@ void update_on_arrival(states_t state, struct selector_key * key) {
     client_data->response_index = 0;
     client_data->response = RESPONSE_UPDATE_QUIT_ERROR;
 
-    // TODO: call method to check if update was update was succesful
-    bool update_succesful = true;
-    if(update_succesful) {
+    if(message_manager_delete_marked_messages(client_data->message_manager)== MESSAGE_SUCCESS) {
         client_data->response = RESPONSE_UPDATE_QUIT_SUCCESS;
     }
 

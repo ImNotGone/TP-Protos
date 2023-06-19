@@ -4,15 +4,27 @@
 #include <errno.h>
 #include <user-manager.h>
 
+#define BLOCK 82
+
+#define USER_STRING "User: "
+#define DATE_STRING "Date and time: "
+
+
 #define NULL_CHECK { \
     if(monitor == NULL){     \
     return -1;               \
     }\
 }
 
+#define NULL_CHECK_PARAMETER(param){\
+    if(param == NULL){\
+        return NULL;\
+    }\
+}
+
 typedef struct logsCDT{
     char * username;
-    char * date_hour;
+    time_t date_hour;
     struct logsCDT * next;
 }logsCDT;
 
@@ -44,6 +56,8 @@ typedef struct monitorCDT{
 typedef struct monitorCDT * monitor_t;
 
 static monitor_t monitor = NULL;
+
+static char * copy_and_concat(char * dir_ini, size_t pos, const char * source, size_t * dim);
 
 int monitor_init(unsigned max_users, unsigned max_conns, unsigned queued_conns){
     if(max_users == 0 || max_conns == 0 || queued_conns == 0){
@@ -87,10 +101,10 @@ int monitor_init(unsigned max_users, unsigned max_conns, unsigned queued_conns){
     return 0;
 }
 
-int monitor_add_connection(char * username, char * date_hour){
+int monitor_add_connection(char * username, time_t date_hour){
     NULL_CHECK
 
-    if(username == NULL || date_hour == NULL){
+    if(username == NULL || date_hour == 0){
         errno = EINVAL;
         return -1;
     }
@@ -154,6 +168,37 @@ char ** monitor_get_usernames(void){
     return user_manager_get_usernames();
 }
 
+char * get_logs(void){
+    if(monitor == NULL){
+        return NULL;
+    }
+
+    size_t dim = 0;
+    char * dir_ini = NULL;
+
+    for (logs_t aux = monitor->first_log; aux != NULL; aux = aux->next){
+        dir_ini = copy_and_concat(dir_ini, dim, USER_STRING, &dim);
+        NULL_CHECK_PARAMETER(dir_ini)
+
+        dir_ini = copy_and_concat(dir_ini, dim, aux->username, &dim);
+        NULL_CHECK_PARAMETER(dir_ini)
+
+        dir_ini = copy_and_concat(dir_ini, dim, "\t", &dim);
+        NULL_CHECK_PARAMETER(dir_ini)
+
+        dir_ini = copy_and_concat(dir_ini, dim, DATE_STRING, &dim);
+        NULL_CHECK_PARAMETER(dir_ini)
+
+        dir_ini = copy_and_concat(dir_ini, dim, ctime(&(aux->date_hour)), &dim);
+        NULL_CHECK_PARAMETER(dir_ini)
+
+        dir_ini = copy_and_concat(dir_ini, dim, "\n", &dim);
+        NULL_CHECK_PARAMETER(dir_ini)
+    }
+
+    return dir_ini;
+}
+
 static void freeList(logs_t first) {
     if(first == NULL) return;
     freeList(first->next);
@@ -167,4 +212,28 @@ int monitor_destroy(void) {
     free(monitor->config);
     free(monitor);
     return 0;
+}
+
+static char * copy_and_concat(char * dir_ini, size_t pos, const char * source, size_t * dim) {
+    int i;
+    for(i = 0; source[i] != 0; i++) {
+        if(i % BLOCK == 0){
+            dir_ini = realloc(dir_ini, (pos+i+BLOCK)* sizeof(char));
+            if(dir_ini == NULL){
+                errno= ENOMEM;
+                *dim = 0;
+                return NULL;
+            }
+        }
+        dir_ini[pos+i] = source[i];
+    }
+    dir_ini = realloc(dir_ini, (pos+i+1)*sizeof(char));
+    if(dir_ini == NULL){
+        errno= ENOMEM;
+        *dim = 0;
+        return NULL;
+    }
+    dir_ini[pos+i] = '\0';
+    *dim = pos+i;
+    return dir_ini;
 }

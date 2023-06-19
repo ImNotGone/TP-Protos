@@ -42,14 +42,21 @@ states_t authorization_write(struct selector_key * key) {
 
 static states_t handle_user(client_t * client_data, char * user, int user_len, char * unused1, int unused2) {
     client_data->response_index = 0;
-    client_data->response = RESPONSE_USER;
-    free(client_data->user);
-    client_data->user = NULL;
-    if(user_len != 0) {
-        client_data->user = calloc(user_len + 1, sizeof(char));
-        // strcpy should be fine, since user is a null terminated string now
-        strncpy(client_data->user, user, user_len);
+
+    if (client_data->user == NULL) {
+        client_data->response = RESPONSE_USER;
+
+        free(client_data->user);
+        client_data->user = NULL;
+
+        if (user_len != 0) {
+            client_data->user = calloc(user_len + 1, sizeof(char));
+            strncpy(client_data->user, user, user_len);
+        }
+    } else {
+        client_data->response = RESPONSE_USER_ALREADY_SPECIFIED;
     }
+
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
     return AUTHORIZATION;
 }
@@ -83,10 +90,14 @@ static states_t handle_pass(client_t * client_data, char * pass, int unused1, ch
             break;
         case EINVAL:
             client_data->response = RESPONSE_PASS_NO_USER;
+            break;
         default:
             client_data->response = RESPONSE_PASS_ERROR;
             break;
     }
+
+    free(client_data->user);
+    client_data->user = NULL;
 
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
     return AUTHORIZATION;

@@ -75,16 +75,16 @@ static states_t handle_pass(client_t * client_data, char * pass, int unused1, ch
 
             switch (errno) {
                 case ENOMEM:
-                    log(LOGGER_ERROR, "Error creating message manager: Insufficient memory.");
+                    log(LOGGER_ERROR, "%s", "Error creating message manager: Insufficient memory.");
                     break;
                 case ENOENT:
-                    log(LOGGER_ERROR, "Error creating message manager: Maildrop directory does not exist.");
+                    log(LOGGER_ERROR, "%s", "Error creating message manager: Maildrop directory does not exist.");
                     break;
                 case ENOTDIR:
-                    log(LOGGER_ERROR, "Error creating message manager: Maildrop path is not a directory.");
+                    log(LOGGER_ERROR, "%s", "Error creating message manager: Maildrop path is not a directory.");
                     break;
                 default:
-                    log(LOGGER_ERROR, "Error creating message manager: Unknown error occurred.");
+                    log(LOGGER_ERROR, "%s", "Error creating message manager: Unknown error occurred.");
                     break;
             }
 

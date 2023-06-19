@@ -1,12 +1,12 @@
 #ifndef POP3_H
 #define POP3_H
 
-#include <selector.h>
-#include <state-machine.h>
-#include <pop3-parser.h>
 #include <buffer.h>
-#include <server.h>
 #include <message-manager.h>
+#include <pop3-parser.h>
+#include <selector.h>
+#include <server.h>
+#include <state-machine.h>
 
 #define CLIENT_DATA(key) ((client_t *)(key->data))
 
@@ -26,13 +26,13 @@ typedef struct client {
     int client_sd;
 
     size_t response_index;
-    char * response;
+    char *response;
 
-    char * user;
+    char *user;
 
     bool closed;
     bool authenticated;
-    bool response_is_mallocced;
+    bool response_is_allocated;
 
     struct buffer buffer_in;
     uint8_t buffer_in_data[BUFFSIZE];
@@ -43,6 +43,6 @@ typedef struct client {
     message_manager_t message_manager;
 } client_t;
 
-void pop3_server_accept(struct selector_key* key);
+void pop3_server_accept(struct selector_key *key);
 
 #endif

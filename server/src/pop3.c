@@ -1,5 +1,6 @@
 #include <common.h>
 #include <selector.h>
+#include <user-manager.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -98,6 +99,7 @@ void pop3_server_accept(struct selector_key* key) {
     // TODO: fill client_data
 
     client_data->closed = false;
+    client_data->authenticated = false;
     client_data->user = NULL;
     client_data->client_sd = client_sd;
 
@@ -185,6 +187,11 @@ static void pop3_client_block(struct selector_key * key) {
 static void pop3_client_close(struct selector_key * key) {
     client_t * client_data = CLIENT_DATA(key);
     state_machine_t * state_machine = &client_data->state_machine;
+
+    if (client_data->authenticated) {
+        user_manager_logout(client_data->user);
+    }
+
     state_machine_handler_close(state_machine, key);
     log(LOGGER_INFO, "closing client with sd:%d", client_data->client_sd);
     close_connection(key);

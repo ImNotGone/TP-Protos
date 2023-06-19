@@ -5,10 +5,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/select.h>
 #include <sys/socket.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <selector.h>
 #include <common.h>
@@ -76,7 +73,7 @@ int main(void) {
     int monitor_socket = -1;
 
     // inicio el user manager
-    if (user_manager_create("./server/test/resources/users.txt", "./server/test/resources/maildrops/") == -1) {
+    if (user_manager_create(USERS_PATH, MAILDROP_PATH) == -1) {
         switch (errno) {
             case ENOMEM:
                 log(LOGGER_ERROR, "%s", "user manager creation failed: out of memory");

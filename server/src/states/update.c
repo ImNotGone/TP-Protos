@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <logger.h>
 #include <message-manager.h>
+#include <monitor.h>
 
 
 void update_on_arrival(states_t state, struct selector_key * key) {
@@ -30,7 +31,8 @@ states_t update_write(struct selector_key * key) {
     size_t bytes_available;
     uint8_t * buffer_out = buffer_read_ptr(&client_data->buffer_out, &bytes_available);
 
-     ssize_t bytes_sent = send(key->fd, buffer_out, bytes_available, MSG_NOSIGNAL);
+    ssize_t bytes_sent = send(key->fd, buffer_out, bytes_available, MSG_NOSIGNAL);
+    monitor_add_bytes(bytes_sent);
 
     if(bytes_sent < 0) {
         log(LOGGER_ERROR, "send() < 0 on update to sd:%d", key->fd);

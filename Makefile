@@ -10,7 +10,6 @@ OBJECTS_SERVER=$(SOURCES_SERVER:.c=.o)
 # binaries
 BINARIES=$(SERVER_BINARY)
 
-
 # make rules
 all: $(BINARIES)
 

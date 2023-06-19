@@ -1,5 +1,4 @@
 #include <monitor.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <user-manager.h>
@@ -8,7 +7,6 @@
 
 #define USER_STRING "User: "
 #define DATE_STRING "Date and time: "
-
 
 #define NULL_CHECK { \
     if(monitor == NULL){     \
@@ -138,6 +136,19 @@ int monitor_add_connection(char * username){
 
 int monitor_add_user(char * username, char * password){
     return user_manager_create_user(username, password);
+}
+
+int monitor_add_bytes(ssize_t bytes_sent){
+    NULL_CHECK
+
+    if(bytes_sent < 0){
+        errno = EINVAL;
+        return -1;
+    }
+
+    monitor->metrics->bytes_transf += bytes_sent;
+
+    return 0;
 }
 
 int monitor_set_max_users(unsigned val){

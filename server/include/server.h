@@ -6,4 +6,7 @@
 #define K           1024
 #define BUFFSIZE    (1*K)
 
+#define MAILDROP_PATH   "./server/data/maildrops/"
+#define USERS_PATH      "./server/data/users.txt"
+
 #endif

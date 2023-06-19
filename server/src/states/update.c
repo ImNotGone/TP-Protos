@@ -17,7 +17,6 @@ void update_on_arrival(states_t state, struct selector_key * key) {
 
     if(message_manager_delete_marked_messages(client_data->message_manager)== MESSAGE_SUCCESS) {
         client_data->response = RESPONSE_UPDATE_QUIT_SUCCESS;
-        message_manager_free(client_data->message_manager);
     }
 
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);

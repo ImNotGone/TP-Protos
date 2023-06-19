@@ -1,3 +1,4 @@
+#include "message-manager.h"
 #include <common.h>
 #include <selector.h>
 #include <user-manager.h>
@@ -103,6 +104,9 @@ void pop3_server_accept(struct selector_key* key) {
     client_data->user = NULL;
     client_data->client_sd = client_sd;
 
+    // ==== Client message manager
+    client_data->message_manager = NULL;
+
     // ==== Client state machine ====
     client_data->state_machine.initial = GREETING;
     client_data->state_machine.states = client_states;
@@ -151,6 +155,7 @@ static void close_connection(struct selector_key * key) {
     close(client_data->client_sd);
     free(client_data->user);
     parser_destroy(client_data->parser);
+    message_manager_free(client_data->message_manager);
     free(client_data);
 }
 

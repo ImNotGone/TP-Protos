@@ -62,6 +62,10 @@ static states_t handle_pass(client_t * client_data, char * pass, int unused1, ch
 
     if (authenticated) {
         client_data->message_manager= message_manager_create(client_data->user, MAILDROP_PATH);
+        if(client_data->message_manager==NULL){
+            //TODO log error and check return statement
+            return ERROR;
+        }
         client_data->response = RESPONSE_PASS_SUCCESS;
         client_data->authenticated = true;
         states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);

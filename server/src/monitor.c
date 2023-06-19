@@ -101,10 +101,10 @@ int monitor_init(unsigned max_users, unsigned max_conns, unsigned queued_conns){
     return 0;
 }
 
-int monitor_add_connection(char * username, time_t date_hour){
+int monitor_add_connection(char * username){
     NULL_CHECK
 
-    if(username == NULL || date_hour == 0){
+    if(username == NULL){
         errno = EINVAL;
         return -1;
     }
@@ -117,7 +117,7 @@ int monitor_add_connection(char * username, time_t date_hour){
     }
 
     new_node->username = username;
-    new_node->date_hour = date_hour;
+    new_node->date_hour = time(NULL);
     new_node->next = NULL;
 
     if(monitor->first_log == NULL){

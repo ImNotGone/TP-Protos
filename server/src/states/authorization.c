@@ -57,7 +57,6 @@ static states_t handle_user(client_t * client_data, char * user, int user_len, c
 static states_t handle_pass(client_t * client_data, char * pass, int unused1, char * unused2, int unused3) {
     client_data->response_index = 0;
 
-    // TODO: handle according to errno
     bool authenticated = user_manager_login(client_data->user, pass) == 0;
 
     if (authenticated) {
@@ -79,6 +78,11 @@ static states_t handle_pass(client_t * client_data, char * pass, int unused1, ch
         case EBUSY:
             client_data->response = RESPONSE_PASS_BUSY;
             break;
+        case ENOENT:
+            client_data->response = RESPONSE_PASS_NO_SUCH_USER;
+            break;
+        case EINVAL:
+            client_data->response = RESPONSE_PASS_NO_USER;
         default:
             client_data->response = RESPONSE_PASS_ERROR;
             break;

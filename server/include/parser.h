@@ -5,10 +5,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-// per RFC 1939 (considering max len for commands and arguments)
+// per RFC 2449 (commands of length 255 must be supported)
 // TODO: ver la max cant de arguments
 #define MAX_COMMAND_LEN 4
-#define MAX_ARG_LEN     40
+#define MAX_ARG_LEN     255 - MAX_COMMAND_LEN
 #define MAX_ARG_COUNT   2
 
 typedef enum {
@@ -19,11 +19,14 @@ typedef enum {
 struct parser_event {
     parsing_status_t parsing_status;
     bool has_errors;
+    // space for command and arguments and 0's
+    uint8_t line[MAX_COMMAND_LEN + 1 + MAX_ARG_LEN + MAX_ARG_COUNT];
+    uint8_t line_len;
     // extra space for '\0' terminator
-    uint8_t cmd[MAX_COMMAND_LEN + 1];
+    uint8_t * cmd;
     uint8_t cmd_len;
     // extra space for '\0' terminator
-    uint8_t args[MAX_ARG_COUNT][MAX_ARG_LEN + 1];
+    uint8_t * args[MAX_ARG_COUNT];
     uint8_t args_len[MAX_ARG_COUNT];
     uint8_t argc;
     struct parser_event * next;

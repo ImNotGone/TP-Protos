@@ -8,12 +8,16 @@
 #include <logger.h>
 
 static void append_to_command(struct parser_event * ret, const uint8_t c) {
+    if(ret->cmd == NULL) {
+        ret->cmd = ret->line;
+    }
     if (ret->cmd_len == MAX_COMMAND_LEN) {
         log(LOGGER_ERROR, "parsing command, cmd_len reached max of %d", MAX_COMMAND_LEN);
         ret->has_errors = true;
         return;
     }
     ret->cmd[ret->cmd_len++] = tolower(c);
+    ret->line_len++;
 }
 
 static void append_to_arg(struct parser_event * ret, const uint8_t c) {
@@ -24,6 +28,7 @@ static void append_to_arg(struct parser_event * ret, const uint8_t c) {
     }
     // TODO: revisar si los args son case sensitive
     ret->args[ret->argc][ret->args_len[ret->argc]++] = tolower(c);
+    ret->line_len++;
 }
 
 static void increment_argc(struct parser_event * ret, const uint8_t c) {
@@ -32,7 +37,9 @@ static void increment_argc(struct parser_event * ret, const uint8_t c) {
         ret->has_errors = true;
         return;
     }
+    ret->line[ret->line_len++] = '\0';
     ret->argc++;
+    ret->args[ret->argc] = &ret->line[ret->line_len];
 }
 
 static void reset_all(struct parser_event * ret, const uint8_t c) {
@@ -43,7 +50,9 @@ static void in_cr(struct parser_event * ret, const uint8_t c) {
     return;
 }
 
-static void nothing(struct parser_event * ret, const uint8_t c) {
+static void goto_first_arg(struct parser_event * ret, const uint8_t c) {
+    ret->line[ret->line_len++] = '\0';
+    ret->args[ret->argc] = &ret->line[ret->line_len];
     return;
 }
 
@@ -61,7 +70,7 @@ static const struct parser_transition TRANSITIONS_START [] =  {
 };
 
 static const struct parser_transition TRANSITIONS_PROCESSING_COMAND [] =  {
-    {.when = ' ', .dest_state = PARSER_PROCESSING_ARGS, .action = nothing},
+    {.when = ' ', .dest_state = PARSER_PROCESSING_ARGS, .action = goto_first_arg},
     {.when = '\r', .dest_state = PARSER_IN_CR, .action = in_cr},
     {.when = ANY, .dest_state = PARSER_PROCESSING_COMAND, .action = append_to_command}
 };
@@ -115,12 +124,14 @@ void pop3_parser_reset_event(struct parser_event * event) {
         for(int j = 0; j < event->args_len[i]; j++) {
             event->args[i][j] = '\0';
         }
+        event->args[i] = event->line;
         event->args_len[i] = 0;
     }
     event->argc = 0;
     for(int i = 0; i < event->cmd_len; i++) {
         event->cmd[i] = '\0';
     }
+    event->cmd = event->line;
     event->cmd_len = 0;
     event->parsing_status = PARSING;
     event->has_errors = false;

@@ -1,4 +1,5 @@
 #include <buffer.h>
+#include <errno.h>
 #include <user-manager.h>
 #include <commands.h>
 #include <responses.h>
@@ -65,7 +66,19 @@ static states_t handle_pass(client_t * client_data, char * pass, int unused1, ch
         states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
         return TRANSACTION;
     }
-    client_data->response = RESPONSE_PASS_ERROR;
+    
+    switch (errno) {
+        case EACCES:
+            client_data->response = RESPONSE_PASS_INVALID_PASSWORD;
+            break;
+        case EBUSY:
+            client_data->response = RESPONSE_PASS_BUSY;
+            break;
+        default:
+            client_data->response = RESPONSE_PASS_ERROR;
+            break;
+    }
+
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
     return AUTHORIZATION;
 }

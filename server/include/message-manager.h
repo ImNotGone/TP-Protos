@@ -1,6 +1,8 @@
 #ifndef MESSAGE_MANAGER_H
 #define MESSAGE_MANAGER_H
 
+#include <stdio.h>
+
 #define MESSAGE_SUCCESS 0
 
 typedef struct message_data_t {
@@ -75,14 +77,18 @@ message_data_t *message_manager_get_message_data_list(message_manager_t message_
 //   message_manager: The message manager
 //   message_number: The message number to get the content for
 // Returns:
-//   The file descriptor for the message content
-//   The file descriptor must be closed by the caller
+//   A pointer to a FILE stream containing the message content on success
+//   NULL on failure
 // Errors:
 //   EINVAL: message_number was less than 1 or greater than the number of messages in the maildrop
 //           or message_manager was NULL
 //   ENOENT: The message is marked for deletion
-//   Any errno value set by open()
-int message_manager_get_message_content(message_manager_t message_manager, int message_number);
+//   Any errno value set by popen()
+// Note:
+//  The caller is responsible for closing the FILE stream
+//  It must be closed using pclose() and not fclose()
+//  This is because the message content is read from a pipe
+FILE *message_manager_get_message_content(message_manager_t message_manager, int message_number);
 
 // Delete the given message number from the given clients maildrop
 // Parameters:

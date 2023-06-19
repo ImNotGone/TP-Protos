@@ -5,9 +5,13 @@
 #include <fcntl.h>
 #include <message-manager.h>
 #include <pop3.h>
-#include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+
+// ========== Private functions ==========
+// Process the message file with a shell command
+// The stdout of the command will be returned
+static FILE *open_and_process_message_file(char *filepath);
 
 // ========== Message manager ==========
 struct message_manager_cdt {
@@ -228,16 +232,16 @@ message_data_t *message_manager_get_message_data_list(message_manager_t message_
 }
 
 // Function to get the fd of a message
-int message_manager_get_message_content(message_manager_t message_manager, int message_number) {
+FILE *message_manager_get_message_content(message_manager_t message_manager, int message_number) {
 
     if (message_manager == NULL || message_number < 1 || message_number > message_manager->message_array_size) {
         errno = EINVAL;
-        return -1;
+        return NULL;
     }
 
     if (message_manager->message_data_array[message_number - 1].marked_for_deletion) {
         errno = ENOENT;
-        return -1;
+        return NULL;
     }
 
     // Get the path of the message
@@ -250,7 +254,7 @@ int message_manager_get_message_content(message_manager_t message_manager, int m
     strcat(message_path, message_manager->message_filename_array[message_number - 1]);
 
     // Open the message
-    return open(message_path, O_RDONLY);
+    return open_and_process_message_file(message_path);
 }
 
 // Function to mark a message for deletion
@@ -319,4 +323,27 @@ int message_manager_delete_marked_messages(message_manager_t message_manager) {
     }
 
     return 0;
+}
+
+
+// ============== Private Functions ==================
+static FILE *open_and_process_message_file(char *filepath) {
+
+    // Shell command to launch
+    // Read the file with cat
+    const char* cat_command = "cat ";
+
+    // Deal with dot stuffing with sed
+    // This will prepend a dot to every line starting with a dot
+    const char* sed_command = "sed 's/^\\./.&/'";
+
+    int command_length = strlen(filepath) + strlen(cat_command) + strlen(sed_command) + 1;
+    char command[command_length];
+
+    strcpy(command, "cat ");
+    strcat(command, filepath);
+    strcat(command, " | sed 's/^\\./\\.\\./g'");
+
+    // Launch the command and return the file stream
+    return popen(command, "r");
 }

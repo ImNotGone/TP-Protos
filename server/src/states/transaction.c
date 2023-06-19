@@ -64,6 +64,9 @@ static states_t handle_stat(client_t * client_data, char * unused1, int unused2 
 }
 static states_t handle_list(client_t * client_data, char * unused1, int unused2 , char * unused3, int unused4) {
     client_data->response_index=0;
+    //TODO LIST functionality, take into account variable arguments
+    client_data->response_is_mallocced=true;
+    states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
     return TRANSACTION;
 }
 static states_t handle_retr(client_t * client_data, char * unused1, int unused2 , char * unused3, int unused4) {

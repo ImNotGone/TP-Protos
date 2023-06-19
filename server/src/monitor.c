@@ -175,6 +175,12 @@ int monitor_delete_user(char * username) {
     return user_manager_delete_user(username);
 }
 
+ssize_t monitor_get_bytes_transf(void){
+    NULL_CHECK
+
+    return monitor->metrics->bytes_transf;
+}
+
 char ** monitor_get_usernames(void){
     return user_manager_get_usernames();
 }

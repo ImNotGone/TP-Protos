@@ -20,6 +20,7 @@ static states_t handle_capa(client_t *client_data, char *unused1, int unused2, c
 static states_t handle_quit(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4);
 
 static states_t handle_list_single_argument(client_t *client_data, char *message_number);
+static void free_allocated_response(client_t * client_data);
 
 static int number_of_digits(int n);
 
@@ -43,7 +44,7 @@ states_t transaction_write(struct selector_key *key) {
 
 static states_t handle_stat(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4) {
     client_data->response_index = 0;
-    client_data->response_is_allocated = false;
+    free_allocated_response(client_data);
 
     int message_count, message_size;
     bool error = message_manager_get_maildrop_info(client_data->message_manager, &message_count, &message_size) == -1;
@@ -74,7 +75,7 @@ static states_t handle_stat(client_t *client_data, char *unused1, int unused2, c
 static states_t handle_list(client_t *client_data, char *message_number, int unused1, char *unused2, int unused3) {
 
     client_data->response_index = 0;
-    client_data->response_is_allocated = false;
+    free_allocated_response(client_data);
 
     // TODO: Porque cuando no hay argumentos todos los argumentos son el comando?
     bool single_line = strcmp(message_number, "list") != 0 && strcmp(message_number, "LIST") != 0;
@@ -151,7 +152,7 @@ static states_t handle_retr(client_t *client_data, char *message_number, int mes
                             int unused4) {
 
     client_data->response_index = 0;
-    client_data->response_is_allocated = false;
+    free_allocated_response(client_data);
 
     int message_number_int = atoi(message_number);
 
@@ -268,7 +269,7 @@ static states_t handle_retr(client_t *client_data, char *message_number, int mes
 
 static states_t handle_dele(client_t *client_data, char *message_number, int unused1, char *unused2, int unused3) {
     client_data->response_index = 0;
-    client_data->response_is_allocated = false;
+    free_allocated_response(client_data);
 
     int message_number_int = atoi(message_number);
 
@@ -307,8 +308,8 @@ static states_t handle_dele(client_t *client_data, char *message_number, int unu
 
 static states_t handle_noop(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4) {
     client_data->response_index = 0;
+    free_allocated_response(client_data);
     client_data->response = RESPONSE_TRANSACTION_NOOP;
-    client_data->response_is_allocated = false;
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
     return TRANSACTION;
 }
@@ -316,7 +317,7 @@ static states_t handle_noop(client_t *client_data, char *unused1, int unused2, c
 static states_t handle_rset(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4) {
 
     client_data->response_index = 0;
-    client_data->response_is_allocated = false;
+    free_allocated_response(client_data);
 
     client_data->response = RESPONSE_TRANSACTION_RSET;
 
@@ -338,7 +339,7 @@ static states_t handle_rset(client_t *client_data, char *unused1, int unused2, c
 
 static states_t handle_capa(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4) {
     client_data->response_index = 0;
-    client_data->response_is_allocated = false;
+    free_allocated_response(client_data);
     client_data->response = RESPONSE_TRANSACTION_CAPA;
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
     return TRANSACTION;
@@ -346,6 +347,7 @@ static states_t handle_capa(client_t *client_data, char *unused1, int unused2, c
 
 static states_t handle_quit(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4) {
     // Go to update state for it to be handled there
+    free_allocated_response(client_data)
     return UPDATE;
 }
 
@@ -412,4 +414,12 @@ static int number_of_digits(int n) {
     }
 
     return digits;
+}
+
+static void free_allocated_response(client_t * client_data){
+    if(client_data->response_is_allocated){
+        client_data->response_is_allocated=false;
+        free(client_data->response);
+        client_data->response=NULL;
+    }
 }

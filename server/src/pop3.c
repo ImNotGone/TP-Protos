@@ -150,7 +150,11 @@ static void close_connection(struct selector_key * key) {
 
     // TODO: metric decrement client count
     log(LOGGER_INFO, "client with sd:%d disconected", client_data->client_sd);
-
+    if(client_data->response_is_allocated){
+        client_data->response_is_allocated=false;
+        free(client_data->response);
+        client_data->response=NULL;
+    }
     selector_unregister_fd(key->s, client_data->client_sd);
     close(client_data->client_sd);
     free(client_data->user);

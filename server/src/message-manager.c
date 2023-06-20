@@ -238,7 +238,7 @@ message_data_t *message_manager_get_message_data_list(message_manager_t message_
 }
 
 // Function to get the fd of a message
-FILE *message_manager_get_message_content(message_manager_t message_manager, int message_number) {
+FILE *message_manager_get_message_content(message_manager_t message_manager, int message_number, int *estimated_message_size) {
 
     if (message_manager == NULL || message_number < 1 || message_number > message_manager->message_array_size) {
         errno = EINVAL;
@@ -259,8 +259,15 @@ FILE *message_manager_get_message_content(message_manager_t message_manager, int
     strcpy(message_path, message_manager->maildrop_path);
     strcat(message_path, message_manager->message_filename_array[message_number - 1]);
 
-    // Open the message
-    return open_and_process_message_file(message_path);
+
+    // Open & Process the message file
+    FILE * message_file = open_and_process_message_file(message_path);
+
+    if (message_file != NULL) {
+        *estimated_message_size = message_manager->message_data_array[message_number - 1].message_size;
+    }
+
+    return message_file;
 }
 
 // Function to mark a message for deletion
@@ -337,18 +344,16 @@ static FILE *open_and_process_message_file(char *filepath) {
 
     // Shell command to launch
     // Read the file with cat
-    const char* cat_command = "cat ";
+    const char* cat_command = "cat";
 
     // Deal with dot stuffing with sed
     // This will prepend a dot to every line starting with a dot
-    const char* sed_command = "sed 's/^\\./.&/'";
+    const char* sed_command = "sed 's/^\\./../g'";
 
-    int command_length = strlen(filepath) + strlen(cat_command) + strlen(sed_command) + 1;
+    int command_length = strlen(cat_command) + strlen(filepath) + strlen(sed_command) + 5;
     char command[command_length];
 
-    strcpy(command, "cat ");
-    strcat(command, filepath);
-    strcat(command, " | sed 's/^\\./\\.\\./g'");
+    sprintf(command, "%s %s | %s", cat_command, filepath, sed_command);
 
     // Launch the command and return the file stream
     return popen(command, "r");

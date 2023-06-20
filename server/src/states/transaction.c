@@ -21,8 +21,6 @@ static states_t handle_quit(client_t *client_data, char *unused1, int unused2, c
 
 static states_t handle_list_single_argument(client_t *client_data, char *message_number);
 
-// static char *concat(char *dir_ini, size_t pos, const char *source, size_t
-// *dim);
 static int number_of_digits(int n);
 
 static command_t commands[] = {
@@ -125,7 +123,7 @@ static states_t handle_list(client_t *client_data, char *message_number, int unu
         sprintf(response + strlen(response), "%d %d%s", data_array[i].message_number, data_array[i].message_size, CRLF);
     }
 
-    sprintf(response + strlen(response), ".%s", CRLF);
+    sprintf(response + strlen(response), "%s", DOT_CRLF);
 
     free(data_array);
 
@@ -135,22 +133,122 @@ static states_t handle_list(client_t *client_data, char *message_number, int unu
     return TRANSACTION;
 }
 
-static states_t handle_retr(client_t *client_data, char *message_number, int message_number_length, char *unused3,
-                            int unused4) {
+static states_t handle_retr(client_t *client_data, char *message_number, int message_number_length, char *unused3, int unused4) {
+
+    client_data->response_index = 0;
+    client_data->response_is_allocated = false;
 
     int message_number_int = atoi(message_number);
 
-    client_data->response_is_allocated = true;
-
-    if (message_number_int == 0) {
+    if (message_number_int <= 0) {
+        client_data->response = RESPONSE_RETR_INVALID_PARAM;
+        states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
         return TRANSACTION;
     }
 
-//    FILE *message_file = message_manager_get_message_content(client_data->message_manager, message_number_int);
+    int message_size;
+    FILE *message_file =
+        message_manager_get_message_content(client_data->message_manager, message_number_int, &message_size);
+
+    if (message_file == NULL) {
+
+        switch (errno) {
+        case EINVAL:
+            client_data->response = RESPONSE_RETR_INVALID_PARAM;
+            break;
+        case ENOENT:
+            client_data->response = RESPONSE_RETR_NO_SUCH_MSG;
+            break;
+        default:
+            client_data->response = RESPONSE_RETR_ERROR;
+            break;
+        }
+
+        states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+        return TRANSACTION;
+    }
+
+    // Estimated because byte-stuffing may increase the size and we want to reduce the number of reallocs
+    int estimated_response_size = strlen(RESPONSE_RETR_SUCCESS) + strlen(DOT_CRLF) + message_size + 1;
+
+    char *response = malloc(estimated_response_size);
+
+    if (response == NULL) {
+        log(LOGGER_ERROR, "%s", "Error getting message data list: not enough memory");
+
+        pclose(message_file);
+
+        client_data->response = RESPONSE_RETR_ERROR;
+        states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+        return TRANSACTION;
+    }
+
+    sprintf(response, "%s", RESPONSE_RETR_SUCCESS);
+
+    // Read the file and write it to the response until EOF
+    char buffer[BUFFER_SIZE];
+    int bytes_read;
+    bool reallocated = false;
+    int dot_crlf_length = strlen(DOT_CRLF);
+    int response_index = strlen(RESPONSE_RETR_SUCCESS);
+
+    while ((bytes_read = fread(buffer, 1, BUFFER_SIZE, message_file)) > 0) {
+
+        if (response_index + bytes_read + dot_crlf_length >= estimated_response_size) {
+            estimated_response_size += BUFFER_SIZE;
+            response = realloc(response, estimated_response_size);
+
+            if (response == NULL) {
+                log(LOGGER_ERROR, "%s", "Error getting message data list: not enough memory");
+
+                pclose(message_file);
+
+                client_data->response = RESPONSE_RETR_ERROR;
+                states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+                return TRANSACTION;
+            }
+
+            reallocated = true;
+        }
+
+        printf("bytes read: %d\n", bytes_read);
+
+        memcpy(response + response_index, buffer, bytes_read);
+        response_index += bytes_read;
+    }
+
+    if (ferror(message_file)) {
+        pclose(message_file);
+        free(response);
+
+        client_data->response = RESPONSE_RETR_ERROR;
+        states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+        return TRANSACTION;
+    }
+
+    pclose(message_file);
+
+    // Append the end of the response
+    sprintf(response + response_index, "%s", DOT_CRLF);
+
+    // Realloc to the exact size if needed
+    if (reallocated) {
+        response = realloc(response, response_index + dot_crlf_length + 1);
+
+        if (response == NULL) {
+            log(LOGGER_ERROR, "%s", "Error getting message data list: not enough memory");
+
+            client_data->response = RESPONSE_RETR_ERROR;
+            states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+            return TRANSACTION;
+        }
+    }
+
+    client_data->response = response;
+    client_data->response_is_allocated = true;
+    states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
 
     return TRANSACTION;
-
-    // Read the file
 }
 
 static states_t handle_dele(client_t *client_data, char *message_number, int unused1, char *unused2, int unused3) {
@@ -238,22 +336,6 @@ static states_t handle_list_single_argument(client_t *client_data, char *message
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
     return TRANSACTION;
 }
-
-// static char *concat(char *dir_ini, size_t pos, const char *source, size_t
-// *dim) {
-//     int i;
-//     for (i = 0; source[i] != 0; i++) {
-//         if (i % BLOQUE == 0) {
-//             dir_ini = realloc(dir_ini, (pos + i + BLOQUE) * sizeof(char));
-//         }
-//
-//         dir_ini[pos + i] = source[i];
-//     }
-//     dir_ini = realloc(dir_ini, (pos + i + 1) * sizeof(char));
-//     dir_ini[pos + i] = '\0';
-//     *dim = pos + i;
-//     return dir_ini;
-// }
 
 static int number_of_digits(int n) {
     int digits = 0;

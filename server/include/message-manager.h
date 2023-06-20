@@ -77,6 +77,8 @@ message_data_t *message_manager_get_message_data_list(message_manager_t message_
 // Parameters:
 //   message_manager: The message manager
 //   message_number: The message number to get the content for
+//   estimated_message_size: A pointer to an integer to store the estimated size of the message content
+//                           This is due to the fact that the message content will be byte stuffed
 // Returns:
 //   A pointer to a FILE stream containing the message content on success
 //   NULL on failure
@@ -89,7 +91,7 @@ message_data_t *message_manager_get_message_data_list(message_manager_t message_
 //  The caller is responsible for closing the FILE stream
 //  It must be closed using pclose() and not fclose()
 //  This is because the message content is read from a pipe
-FILE *message_manager_get_message_content(message_manager_t message_manager, int message_number);
+FILE *message_manager_get_message_content(message_manager_t message_manager, int message_number, int *estimated_message_size);
 
 // Delete the given message number from the given clients maildrop
 // Parameters:

@@ -24,24 +24,38 @@ struct message_manager_cdt {
     int message_count;
 };
 
-static bool is_fd_same_file(int fd, const char *filepath) {
-    struct stat fd_stat, filepath_stat;
+static bool are_files_equal(FILE *file1, const char *file2_path) {
 
-    // Get the file status for the file descriptor
-    if (fstat(fd, &fd_stat) == -1) {
-        perror("Failed to get file status for the file descriptor");
-        return -1;
+    // Open the second file
+    FILE *file2 = fopen(file2_path, "r");
+
+    if (file1 == NULL || file2 == NULL) {
+        // Failed to open one or both files
+        return true;
     }
 
-    // Get the file status for the specific filepath
-    if (stat(filepath, &filepath_stat) == -1) {
-        perror("Failed to get file status for the filepath");
-        return -1;
+    int byte1, byte2;
+    bool files_match = true;
+    bool file1_eof = true;
+
+    // Compare file contents byte by byte
+    while ((byte1 = fgetc(file1)) != EOF && (byte2 = fgetc(file2)) != EOF) {
+        if (byte1 != byte2) {
+            files_match = false;
+            file1_eof = false;
+            break;
+        }
     }
 
-    // Compare the device and inode numbers to check if they refer to the same
-    // file
-    return (fd_stat.st_dev == filepath_stat.st_dev) && (fd_stat.st_ino == filepath_stat.st_ino);
+    // Check if both files reached EOF simultaneously
+    if (file1_eof && (byte2 = fgetc(file2)) != EOF) {
+        files_match = false;
+    }
+
+    fclose(file2);
+    rewind(file1);
+
+    return files_match;
 }
 
 int main() {
@@ -54,6 +68,7 @@ int main() {
     char *file_1_path = "./test/resources/maildrops/pepe/1.txt";
     char *file_2_path = "./test/resources/maildrops/pepe/2.txt";
     char *file_3_path = "./test/resources/maildrops/pepe/dummy.txt";
+    char *byte_stuffed_file_1_path = "./test/resources/byte-stuffed-1.txt";
 
     // Create a dummy file to be removed later
     fopen("./test/resources/maildrops/pepe/dummy.txt", "w");
@@ -153,29 +168,34 @@ int main() {
     free(message_data_list);
 
     // Test message_manager_get_message_content
-    int fd_1 = message_manager_get_message_content(mm, 1);
-    int fd_2 = message_manager_get_message_content(mm, 2);
-    int fd_3 = message_manager_get_message_content(mm, 3);
+    int size1, size2, size3;
+    FILE *file = message_manager_get_message_content(mm, 1, &size1);
+    FILE *file2 = message_manager_get_message_content(mm, 2, &size2);
+    FILE *file3 = message_manager_get_message_content(mm, 3, &size3);
 
-    assert(fd_1 != -1);
-    assert(fd_2 != -1);
-    assert(fd_3 != -1);
+    assert(file != NULL);
+    assert(file2 != NULL);
+    assert(file3 != NULL);
 
-    assert(fd_1 != fd_2);
-    assert(fd_1 != fd_3);
-    assert(fd_2 != fd_3);
+    assert(file != file2);
+    assert(file != file3);
+    assert(file2 != file3);
 
-    // Check if the file descriptor refers to the correct file
-    assert(is_fd_same_file(fd_1, file_1_path) || is_fd_same_file(fd_1, file_2_path) ||
-           is_fd_same_file(fd_1, file_3_path));
-    assert(is_fd_same_file(fd_2, file_1_path) || is_fd_same_file(fd_2, file_2_path) ||
-           is_fd_same_file(fd_2, file_3_path));
-    assert(is_fd_same_file(fd_3, file_1_path) || is_fd_same_file(fd_3, file_2_path) ||
-           is_fd_same_file(fd_3, file_3_path));
+    assert(size1 == file_1_size || size1 == file_2_size || size1 == file_3_size);
+    assert(size2 == file_1_size || size2 == file_2_size || size2 == file_3_size);
+    assert(size3 == file_1_size || size3 == file_2_size || size3 == file_3_size);
 
-    close(fd_1);
-    close(fd_2);
-    close(fd_3);
+    // Check if file contents are correct
+    assert(are_files_equal(file, byte_stuffed_file_1_path) || are_files_equal(file, file_2_path) ||
+           are_files_equal(file, file_3_path));
+    assert(are_files_equal(file2, byte_stuffed_file_1_path) || are_files_equal(file2, file_2_path) ||
+           are_files_equal(file2, file_3_path));
+    assert(are_files_equal(file3, byte_stuffed_file_1_path) || are_files_equal(file3, file_2_path) ||
+           are_files_equal(file3, file_3_path));
+
+    pclose(file);
+    pclose(file2);
+    pclose(file3);
 
     // Test message_manager_delete_message
     message_manager_delete_message(mm, 3);

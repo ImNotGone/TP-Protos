@@ -7,3 +7,7 @@ Nullam imperdiet mauris at justo efficitur ullamcorper. Duis fringilla velit vel
 Vivamus vestibulum dapibus posuere. Integer iaculis mauris nec magna mattis convallis. Interdum et malesuada fames ac ante ipsum primis in faucibus. Fusce aliquam metus id risus consequat, eu aliquet augue mattis. Ut lacus justo, rutrum ac tempor eget, efficitur at lacus. Duis in leo massa. Vestibulum a ligula vitae magna convallis mattis. Praesent ut ullamcorper ante. Nulla facilisi. Nam non orci ornare, ornare lorem quis, interdum sapien. Nam a sodales massa. Sed lorem elit, feugiat in nibh in, pharetra pellentesque libero. Nam id efficitur ante.
 
 Morbi a nunc volutpat, pulvinar purus sed, sollicitudin nisi. Nulla facilisi. Phasellus imperdiet nibh in consequat tincidunt. Fusce nisi justo, faucibus a dolor vitae, auctor euismod justo. Curabitur euismod porttitor sagittis. Praesent laoreet tempus libero quis semper. Aenean non sem convallis sem blandit facilisis mollis nec ligula. Curabitur quis eleifend risus. Duis volutpat quam sit amet metus cursus aliquam. Sed in dolor eu ante tempor tempus non id ex. Nulla facilisi. Proin nec metus libero. Aliquam sit amet fermentum nunc. Nam consequat ipsum tortor, at finibus metus commodo in. Etiam varius mauris eu enim semper dapibus. Aliquam erat volutpat.
+
+. This line starts with a dot
+. This line should be byte-stuffed
+.. This line should be byte-stuffed too

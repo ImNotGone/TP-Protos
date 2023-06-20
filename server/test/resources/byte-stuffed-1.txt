@@ -8,6 +8,6 @@ Vivamus vestibulum dapibus posuere. Integer iaculis mauris nec magna mattis conv
 
 Morbi a nunc volutpat, pulvinar purus sed, sollicitudin nisi. Nulla facilisi. Phasellus imperdiet nibh in consequat tincidunt. Fusce nisi justo, faucibus a dolor vitae, auctor euismod justo. Curabitur euismod porttitor sagittis. Praesent laoreet tempus libero quis semper. Aenean non sem convallis sem blandit facilisis mollis nec ligula. Curabitur quis eleifend risus. Duis volutpat quam sit amet metus cursus aliquam. Sed in dolor eu ante tempor tempus non id ex. Nulla facilisi. Proin nec metus libero. Aliquam sit amet fermentum nunc. Nam consequat ipsum tortor, at finibus metus commodo in. Etiam varius mauris eu enim semper dapibus. Aliquam erat volutpat.
 
-. This line starts with a dot
-. This line should be byte-stuffed
-.. This line should be byte-stuffed too
+.. This line starts with a dot
+.. This line should be byte-stuffed
+... This line should be byte-stuffed too

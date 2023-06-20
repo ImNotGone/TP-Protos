@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <errno.h>
 #include <logger.h>
 #include <message-manager.h>
 #include <monitor.h>
@@ -13,13 +14,32 @@ void update_on_arrival(states_t state, struct selector_key *key) {
     client_t *client_data = CLIENT_DATA(key);
 
     client_data->response_index = 0;
-    client_data->response = RESPONSE_UPDATE_QUIT_ERROR;
     client_data->response_is_allocated = false;
 
-    if (message_manager_delete_marked_messages(client_data->message_manager) == MESSAGE_SUCCESS) {
-        client_data->response = RESPONSE_UPDATE_QUIT_SUCCESS;
-    }
+    bool error = message_manager_delete_marked_messages(client_data->message_manager) == -1;
 
+    if (error) {
+        switch (errno) {
+            case EINVAL:
+                log(LOGGER_ERROR, "%s", "Error deleting marked messages: message manager was NULL");
+                client_data->response = RESPONSE_UPDATE_QUIT_ERR_NO_MAILS;
+                break;
+            case EIO:
+                log(LOGGER_ERROR, "%s", "Error deleting marked messages: I/O error occurred");
+                client_data->response = RESPONSE_UPDATE_QUIT_ERR_SOME_MAILS;
+                break;
+            default:
+                log(LOGGER_ERROR, "%s", "Error deleting marked messages: Unknown error occurred");
+                client_data->response = RESPONSE_UPDATE_QUIT_ERR_NO_MAILS;
+                break;
+        }
+
+        states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+
+        return;
+    } 
+
+    client_data->response = RESPONSE_UPDATE_QUIT_SUCCESS;
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
 
     return;

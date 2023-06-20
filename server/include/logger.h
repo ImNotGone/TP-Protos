@@ -20,10 +20,21 @@ void logger_set_log_lvl(LOG_LEVEL newLevel);
 
 char * logger_get_lvl_description(LOG_LEVEL level);
 
+
+// Esto para apagar los logs en prod
+// #define PROD
+
+#ifndef PROD
 // Debe ser una macro para poder obtener nombre y linea de archivo.
 #define log(level, fmt, ...)   {if(level >= current_level) {\
 	fprintf (stderr, "%s: %s:%d, ", logger_get_lvl_description(level), __FILE__, __LINE__); \
 	fprintf(stderr, fmt, ##__VA_ARGS__); \
 	fprintf(stderr,"\n"); }\
 	if ( level==LOGGER_FATAL) exit(1);}
+#endif
+
+#endif
+
+#ifdef PROD
+#define log(level, fmt, ...) ;
 #endif

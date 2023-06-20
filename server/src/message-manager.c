@@ -212,6 +212,12 @@ message_data_t *message_manager_get_message_data_list(message_manager_t message_
         return NULL;
     }
 
+    if (message_manager->message_array_size == 0) {
+        *message_count = 0;
+        errno = ENOENT;
+        return NULL;
+    }
+
     // Copy the message data into a new array
     message_data_t *message_data_list = malloc(sizeof(message_data_t) * message_manager->message_array_size);
 

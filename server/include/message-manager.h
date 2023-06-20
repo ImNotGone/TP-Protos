@@ -70,6 +70,7 @@ message_data_t *message_manager_get_message_data(message_manager_t message_manag
 // Errors:
 //   ENOMEM: Insufficient memory to allocate the array of message_data_t structs
 //   EINVAL: A parameter was NULL
+//   ENOENT: The maildrop directory is empty
 message_data_t *message_manager_get_message_data_list(message_manager_t message_manager, int *message_count);
 
 // Get the message content for the given message number

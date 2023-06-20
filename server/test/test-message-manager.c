@@ -204,6 +204,13 @@ int main() {
     message_data = message_manager_get_message_data(mm, 3);
     assert(message_data->marked_for_deletion == true);
 
+
+    // Check maildrop info
+    message_manager_get_maildrop_info(mm, &message_count, &total_message_size);
+
+    assert(message_count == 2);
+    assert(total_message_size == total_size - message_data->message_size);
+
     free(message_data);
 
     // Test message_manager_reset_deleted_flag
@@ -214,6 +221,12 @@ int main() {
     assert(message_data->marked_for_deletion == false);
 
     free(message_data);
+
+    // Check maildrop info
+    message_manager_get_maildrop_info(mm, &message_count, &total_message_size);
+    
+    assert(message_count == 3);
+    assert(total_message_size == total_size);
 
     // Test message_manager_delete_marked_messages
     message_manager_delete_message(mm, dummy_message_number);

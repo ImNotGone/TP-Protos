@@ -302,9 +302,11 @@ int message_manager_reset_deleted_flag(message_manager_t message_manager) {
 
     // Reset the deleted flag for all messages & update the message count and size
     for (int i = 0; i < message_manager->message_array_size; i++) {
-        message_manager->message_data_array[i].marked_for_deletion = false;
-        message_manager->message_count++;
-        message_manager->total_message_size += message_manager->message_data_array[i].message_size;
+        if (message_manager->message_data_array[i].marked_for_deletion) {
+            message_manager->message_data_array[i].marked_for_deletion = false;
+            message_manager->message_count++;
+            message_manager->total_message_size += message_manager->message_data_array[i].message_size;
+        }
     }
 
     return 0;

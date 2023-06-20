@@ -60,10 +60,10 @@ static states_t handle_stat(client_t *client_data, char *unused1, int unused2, c
     client_data->response_is_allocated = true;
 
     int response_length =
-        strlen(OK_HEADER) + 1 + number_of_digits(message_count) + 1 + number_of_digits(message_size) + 1;
+        strlen(OK_HEADER) + 1 + number_of_digits(message_count) + 1 + number_of_digits(message_size) + 2;
     char *response = malloc(response_length);
 
-    sprintf(response, "%s %d %d", OK_HEADER, message_count, message_size);
+    sprintf(response, "%s %d %d\n", OK_HEADER, message_count, message_size);
 
     client_data->response = response;
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
@@ -108,9 +108,11 @@ static states_t handle_list(client_t *client_data, char *message_number, int unu
     int line_break_length = strlen(CRLF);
 
     for (int i = 0; i < message_count; ++i) {
-        // message_number + " " + message_size + CRLF
-        response_length += number_of_digits(data_array[i].message_number) + 1 +
+        if (!data_array[i].marked_for_deletion) {
+            // message_number + " " + message_size + CRLF
+            response_length += number_of_digits(data_array[i].message_number) + 1 +
                            number_of_digits(data_array[i].message_size) + line_break_length;
+        }
     }
     // .CRLF
     response_length += 1 + line_break_length;
@@ -130,7 +132,9 @@ static states_t handle_list(client_t *client_data, char *message_number, int unu
     sprintf(response, "%s", RESPONSE_LIST_MULTI_SUCCESS);
 
     for (int i = 0; i < message_count; ++i) {
-        sprintf(response + strlen(response), "%d %d%s", data_array[i].message_number, data_array[i].message_size, CRLF);
+        if (!data_array[i].marked_for_deletion) {
+            sprintf(response + strlen(response), "%d %d%s", data_array[i].message_number, data_array[i].message_size, CRLF);
+        }
     }
 
     sprintf(response + strlen(response), "%s", DOT_CRLF);
@@ -371,6 +375,14 @@ static states_t handle_list_single_argument(client_t *client_data, char *message
         return TRANSACTION;
     }
 
+    if (data->marked_for_deletion) {
+        free(data);
+
+        client_data->response = RESPONSE_LIST_NO_SUCH_MSG;
+        states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+        return TRANSACTION;
+    }
+
     client_data->response_is_allocated = true;
 
     int response_length = strlen(OK_HEADER) + 1 + number_of_digits(message_number_int) + 1 +
@@ -389,6 +401,10 @@ static states_t handle_list_single_argument(client_t *client_data, char *message
 
 static int number_of_digits(int n) {
     int digits = 0;
+
+    if (n == 0) {
+        return 1;
+    }
 
     while (n != 0) {
         n /= 10;

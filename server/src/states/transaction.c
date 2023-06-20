@@ -347,7 +347,7 @@ static states_t handle_capa(client_t *client_data, char *unused1, int unused2, c
 
 static states_t handle_quit(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4) {
     // Go to update state for it to be handled there
-    free_allocated_response(client_data)
+    free_allocated_response(client_data);
     return UPDATE;
 }
 

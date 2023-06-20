@@ -21,7 +21,8 @@ static states_t handle_quit(client_t *client_data, char *unused1, int unused2, c
 
 static states_t handle_list_single_argument(client_t *client_data, char *message_number);
 
-static char *concat(char *dir_ini, size_t pos, const char *source, size_t *dim);
+// static char *concat(char *dir_ini, size_t pos, const char *source, size_t
+// *dim);
 static int number_of_digits(int n);
 
 static command_t commands[] = {
@@ -94,7 +95,6 @@ static states_t handle_list(client_t *client_data, char *message_number, int unu
         return TRANSACTION;
     }
 
-
     // Get Response Length
     int response_length = strlen(RESPONSE_LIST_MULTI_SUCCESS);
     int line_break_length = strlen(CRLF);
@@ -126,6 +126,8 @@ static states_t handle_list(client_t *client_data, char *message_number, int unu
     }
 
     sprintf(response + strlen(response), ".%s", CRLF);
+
+    free(data_array);
 
     client_data->response = response;
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
@@ -198,7 +200,7 @@ static states_t handle_quit(client_t *client_data, char *unused1, int unused2, c
 static states_t handle_list_single_argument(client_t *client_data, char *message_number) {
     int message_number_int = atoi(message_number);
 
-    if (message_number_int == 0) {
+    if (message_number_int <= 0) {
         client_data->response = RESPONSE_LIST_INVALID_PARAM;
         states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
         return TRANSACTION;
@@ -223,11 +225,12 @@ static states_t handle_list_single_argument(client_t *client_data, char *message
 
     client_data->response_is_allocated = true;
 
-    int response_length =
-        strlen(OK_HEADER) + 1 + number_of_digits(message_number_int) + 1 + number_of_digits(data->message_size) + 1;
+    int response_length = strlen(OK_HEADER) + 1 + number_of_digits(message_number_int) + 1 +
+                          number_of_digits(data->message_size) + strlen(CRLF) + 1;
+
     char *response = malloc(response_length);
 
-    sprintf(response, "%s %d %d", OK_HEADER, message_number_int, data->message_size);
+    sprintf(response, "%s %d %d%s", OK_HEADER, message_number_int, data->message_size, CRLF);
     client_data->response = response;
 
     free(data);
@@ -236,18 +239,21 @@ static states_t handle_list_single_argument(client_t *client_data, char *message
     return TRANSACTION;
 }
 
-static char *concat(char *dir_ini, size_t pos, const char *source, size_t *dim) {
-    int i;
-    for (i = 0; source[i] != 0; i++) {
-        if (i % BLOQUE == 0)
-            dir_ini = realloc(dir_ini, (pos + i + BLOQUE) * sizeof(char));
-        dir_ini[pos + i] = source[i];
-    }
-    dir_ini = realloc(dir_ini, (pos + i + 1) * sizeof(char));
-    dir_ini[pos + i] = '\0';
-    *dim = pos + i;
-    return dir_ini;
-}
+// static char *concat(char *dir_ini, size_t pos, const char *source, size_t
+// *dim) {
+//     int i;
+//     for (i = 0; source[i] != 0; i++) {
+//         if (i % BLOQUE == 0) {
+//             dir_ini = realloc(dir_ini, (pos + i + BLOQUE) * sizeof(char));
+//         }
+//
+//         dir_ini[pos + i] = source[i];
+//     }
+//     dir_ini = realloc(dir_ini, (pos + i + 1) * sizeof(char));
+//     dir_ini[pos + i] = '\0';
+//     *dim = pos + i;
+//     return dir_ini;
+// }
 
 static int number_of_digits(int n) {
     int digits = 0;

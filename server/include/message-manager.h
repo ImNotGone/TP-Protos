@@ -102,6 +102,7 @@ FILE *message_manager_get_message_content(message_manager_t message_manager, int
 // Errors:
 //   EINVAL: message_number was less than 1 or greater than the number of messages in the maildrop
 //           or message_manager was NULL
+//   ENOENT: The message is marked for deletion
 // Note:
 //   This function does not actually delete the message from the maildrop, it just marks it for deletion
 //   The message will be deleted when the client issues the QUIT command and the server enters the UPDATE state

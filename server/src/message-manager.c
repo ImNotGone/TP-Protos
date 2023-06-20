@@ -278,6 +278,11 @@ int message_manager_delete_message(message_manager_t message_manager, int messag
         return -1;
     }
 
+    if (message_manager->message_data_array[message_number - 1].marked_for_deletion) {
+        errno = ENOENT;
+        return -1;
+    }
+
     message_manager->message_data_array[message_number - 1].marked_for_deletion = true;
 
     // Update the message count and size

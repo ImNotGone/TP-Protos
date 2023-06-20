@@ -43,9 +43,19 @@ states_t transaction_write(struct selector_key *key) {
 
 static states_t handle_stat(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4) {
     client_data->response_index = 0;
+    client_data->response_is_allocated = false;
 
     int message_count, message_size;
-    message_manager_get_maildrop_info(client_data->message_manager, &message_count, &message_size);
+    bool error = message_manager_get_maildrop_info(client_data->message_manager, &message_count, &message_size) == -1;
+
+    if (error) {
+        log(LOGGER_ERROR, "%s", "Error getting maildrop info: received unexpected null pointer");
+
+        client_data->response = RESPONSE_STAT_ERROR;
+        states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+
+        return TRANSACTION;
+    }
 
     client_data->response_is_allocated = true;
 
@@ -133,7 +143,8 @@ static states_t handle_list(client_t *client_data, char *message_number, int unu
     return TRANSACTION;
 }
 
-static states_t handle_retr(client_t *client_data, char *message_number, int message_number_length, char *unused3, int unused4) {
+static states_t handle_retr(client_t *client_data, char *message_number, int message_number_length, char *unused3,
+                            int unused4) {
 
     client_data->response_index = 0;
     client_data->response_is_allocated = false;
@@ -168,7 +179,8 @@ static states_t handle_retr(client_t *client_data, char *message_number, int mes
         return TRANSACTION;
     }
 
-    // Estimated because byte-stuffing may increase the size and we want to reduce the number of reallocs
+    // Estimated because byte-stuffing may increase the size and we want to reduce
+    // the number of reallocs
     int estimated_response_size = strlen(RESPONSE_RETR_SUCCESS) + strlen(DOT_CRLF) + message_size + 1;
 
     char *response = malloc(estimated_response_size);
@@ -204,14 +216,13 @@ static states_t handle_retr(client_t *client_data, char *message_number, int mes
                 pclose(message_file);
 
                 client_data->response = RESPONSE_RETR_ERROR;
-                states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+                states_common_response_write(&client_data->buffer_out, client_data->response,
+                                             &client_data->response_index);
                 return TRANSACTION;
             }
 
             reallocated = true;
         }
-
-        printf("bytes read: %d\n", bytes_read);
 
         memcpy(response + response_index, buffer, bytes_read);
         response_index += bytes_read;
@@ -253,14 +264,43 @@ static states_t handle_retr(client_t *client_data, char *message_number, int mes
 
 static states_t handle_dele(client_t *client_data, char *message_number, int unused1, char *unused2, int unused3) {
     client_data->response_index = 0;
-    client_data->response = RESPONSE_TRANSACTION_DELE_ERROR;
-    if (message_manager_delete_message(client_data->message_manager, atoi(message_number)) == MESSAGE_SUCCESS) {
-        client_data->response = RESPONSE_TRANSACTION_DELE_SUCCESS;
-    }
     client_data->response_is_allocated = false;
+
+    int message_number_int = atoi(message_number);
+
+    if (message_number_int <= 0) {
+        client_data->response = RESPONSE_LIST_INVALID_PARAM;
+        states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+
+        return TRANSACTION;
+    }
+
+    bool error = message_manager_delete_message(client_data->message_manager, message_number_int) == -1;
+
+    if (error) {
+        switch (errno) {
+        case EINVAL:
+            client_data->response = RESPONSE_DELE_NO_SUCH_MSG;
+            break;
+        case ENOENT:
+            client_data->response = RESPONSE_DELE_MSG_ALREADY_DELETED;
+            break;
+        default:
+            log(LOGGER_ERROR, "%s", "Error deleting message: unknown error");
+            client_data->response = RESPONSE_DELE_ERROR;
+            break;
+        }
+
+        states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+        return TRANSACTION;
+    }
+
+    client_data->response = RESPONSE_DELE_SUCCESS;
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+
     return TRANSACTION;
 }
+
 static states_t handle_noop(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4) {
     client_data->response_index = 0;
     client_data->response = RESPONSE_TRANSACTION_NOOP;
@@ -268,16 +308,26 @@ static states_t handle_noop(client_t *client_data, char *unused1, int unused2, c
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
     return TRANSACTION;
 }
+
 static states_t handle_rset(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4) {
-    if (message_manager_reset_deleted_flag(client_data->message_manager) != MESSAGE_SUCCESS) {
-        // TODO log error
-        return ERROR;
-    }
+
     client_data->response_index = 0;
-    // TODO RFC says possible outcome +OK but in example there is more text on the
-    // server response to the client
     client_data->response_is_allocated = false;
+
     client_data->response = RESPONSE_TRANSACTION_RSET;
+
+    bool error = message_manager_reset_deleted_flag(client_data->message_manager) == -1;
+
+    if (error) {
+        log(LOGGER_ERROR, "%s", "Error resetting messages: message manager was null");
+
+        // RFC says to always return +OK
+        // If this happens, something went really wrong anyways
+        states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+
+        return TRANSACTION;
+    }
+
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
     return TRANSACTION;
 }

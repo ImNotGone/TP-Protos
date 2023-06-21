@@ -21,10 +21,10 @@ client
 (command_handler)handle_user},
       |
 */
-static states_t handle_user(client_t *client_data, char *user, int user_len, char *unused1, int unused2);
-static states_t handle_pass(client_t *client_data, char *pass, int unused1, char *unused2, int unused3);
-static states_t handle_capa(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4);
-static states_t handle_quit(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4);
+static states_t handle_user(struct selector_key * key, char *user, int user_len, char *unused1, int unused2);
+static states_t handle_pass(struct selector_key * key, char *pass, int unused1, char *unused2, int unused3);
+static states_t handle_capa(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4);
+static states_t handle_quit(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4);
 
 static command_t commands[] = {
     {.name = "user", .command_handler = handle_user},
@@ -44,7 +44,8 @@ states_t authorization_write(struct selector_key *key) {
     return states_common_write(key, "authorization", commands, cant_commands);
 }
 
-static states_t handle_user(client_t *client_data, char *user, int user_len, char *unused1, int unused2) {
+static states_t handle_user(struct selector_key * key, char *user, int user_len, char *unused1, int unused2) {
+    client_t * client_data = CLIENT_DATA(key);
     client_data->response_index = 0;
 
     if (client_data->user == NULL) {
@@ -65,7 +66,8 @@ static states_t handle_user(client_t *client_data, char *user, int user_len, cha
     return AUTHORIZATION;
 }
 
-static states_t handle_pass(client_t *client_data, char *pass, int unused1, char *unused2, int unused3) {
+static states_t handle_pass(struct selector_key * key, char *pass, int unused1, char *unused2, int unused3) {
+    client_t * client_data = CLIENT_DATA(key);
     client_data->response_index = 0;
 
     bool authenticated = user_manager_login(client_data->user, pass) == 0;
@@ -130,7 +132,8 @@ static states_t handle_pass(client_t *client_data, char *pass, int unused1, char
     return AUTHORIZATION;
 }
 
-static states_t handle_capa(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4) {
+static states_t handle_capa(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4) {
+    client_t * client_data = CLIENT_DATA(key);
     client_data->response_index = 0;
     client_data->response = RESPONSE_AUTH_CAPA;
     client_data->response_is_allocated = false;
@@ -138,7 +141,8 @@ static states_t handle_capa(client_t *client_data, char *unused1, int unused2, c
     return AUTHORIZATION;
 }
 
-static states_t handle_quit(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4) {
+static states_t handle_quit(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4) {
+    client_t * client_data = CLIENT_DATA(key);
     client_data->response_index = 0;
     client_data->response = RESPONSE_AUTH_QUIT;
     client_data->response_is_allocated = false;

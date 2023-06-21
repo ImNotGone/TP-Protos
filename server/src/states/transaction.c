@@ -10,16 +10,16 @@
 #include <stdio.h>
 #include <string.h>
 
-static states_t handle_stat(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4);
-static states_t handle_list(client_t *client_data, char *message_number, int unused1, char *unused2, int unused3);
-static states_t handle_retr(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4);
-static states_t handle_dele(client_t *client_data, char *message_number, int unused1, char *unused2, int unused3);
-static states_t handle_noop(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4);
-static states_t handle_rset(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4);
-static states_t handle_capa(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4);
-static states_t handle_quit(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4);
+static states_t handle_stat(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4);
+static states_t handle_list(struct selector_key * key, char *message_number, int unused1, char *unused2, int unused3);
+static states_t handle_retr(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4);
+static states_t handle_dele(struct selector_key * key, char *message_number, int unused1, char *unused2, int unused3);
+static states_t handle_noop(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4);
+static states_t handle_rset(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4);
+static states_t handle_capa(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4);
+static states_t handle_quit(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4);
 
-static states_t handle_list_single_argument(client_t *client_data, char *message_number);
+static states_t handle_list_single_argument(struct selector_key * key, char *message_number);
 static void free_allocated_response(client_t * client_data);
 
 static int number_of_digits(int n);
@@ -42,7 +42,8 @@ states_t transaction_write(struct selector_key *key) {
     return states_common_write(key, "transaction", commands, cant_commands);
 }
 
-static states_t handle_stat(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4) {
+static states_t handle_stat(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4) {
+    client_t * client_data = CLIENT_DATA(key);
     client_data->response_index = 0;
     free_allocated_response(client_data);
 
@@ -72,8 +73,8 @@ static states_t handle_stat(client_t *client_data, char *unused1, int unused2, c
     return TRANSACTION;
 }
 
-static states_t handle_list(client_t *client_data, char *message_number, int unused1, char *unused2, int unused3) {
-
+static states_t handle_list(struct selector_key * key, char *message_number, int unused1, char *unused2, int unused3) {
+    client_t * client_data = CLIENT_DATA(key);
     client_data->response_index = 0;
     free_allocated_response(client_data);
 
@@ -81,7 +82,7 @@ static states_t handle_list(client_t *client_data, char *message_number, int unu
     bool single_line = strcmp(message_number, "list") != 0 && strcmp(message_number, "LIST") != 0;
 
     if (single_line) {
-        return handle_list_single_argument(client_data, message_number);
+        return handle_list_single_argument(key, message_number);
     }
 
     int message_count;
@@ -148,9 +149,9 @@ static states_t handle_list(client_t *client_data, char *message_number, int unu
     return TRANSACTION;
 }
 
-static states_t handle_retr(client_t *client_data, char *message_number, int message_number_length, char *unused3,
+static states_t handle_retr(struct selector_key * key, char *message_number, int message_number_length, char *unused3,
                             int unused4) {
-
+    client_t * client_data = CLIENT_DATA(key);
     client_data->response_index = 0;
     free_allocated_response(client_data);
 
@@ -267,7 +268,8 @@ static states_t handle_retr(client_t *client_data, char *message_number, int mes
     return TRANSACTION;
 }
 
-static states_t handle_dele(client_t *client_data, char *message_number, int unused1, char *unused2, int unused3) {
+static states_t handle_dele(struct selector_key * key, char *message_number, int unused1, char *unused2, int unused3) {
+    client_t * client_data = CLIENT_DATA(key);
     client_data->response_index = 0;
     free_allocated_response(client_data);
 
@@ -306,7 +308,8 @@ static states_t handle_dele(client_t *client_data, char *message_number, int unu
     return TRANSACTION;
 }
 
-static states_t handle_noop(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4) {
+static states_t handle_noop(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4) {
+    client_t * client_data = CLIENT_DATA(key);
     client_data->response_index = 0;
     free_allocated_response(client_data);
     client_data->response = RESPONSE_TRANSACTION_NOOP;
@@ -314,7 +317,8 @@ static states_t handle_noop(client_t *client_data, char *unused1, int unused2, c
     return TRANSACTION;
 }
 
-static states_t handle_rset(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4) {
+static states_t handle_rset(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4) {
+    client_t * client_data = CLIENT_DATA(key);
 
     client_data->response_index = 0;
     free_allocated_response(client_data);
@@ -337,7 +341,8 @@ static states_t handle_rset(client_t *client_data, char *unused1, int unused2, c
     return TRANSACTION;
 }
 
-static states_t handle_capa(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4) {
+static states_t handle_capa(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4) {
+    client_t * client_data = CLIENT_DATA(key);
     client_data->response_index = 0;
     free_allocated_response(client_data);
     client_data->response = RESPONSE_TRANSACTION_CAPA;
@@ -345,13 +350,15 @@ static states_t handle_capa(client_t *client_data, char *unused1, int unused2, c
     return TRANSACTION;
 }
 
-static states_t handle_quit(client_t *client_data, char *unused1, int unused2, char *unused3, int unused4) {
+static states_t handle_quit(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4) {
+    client_t * client_data = CLIENT_DATA(key);
     // Go to update state for it to be handled there
     free_allocated_response(client_data);
     return UPDATE;
 }
 
-static states_t handle_list_single_argument(client_t *client_data, char *message_number) {
+static states_t handle_list_single_argument(struct selector_key * key, char *message_number) {
+    client_t * client_data = CLIENT_DATA(key);
     int message_number_int = atoi(message_number);
 
     if (message_number_int <= 0) {

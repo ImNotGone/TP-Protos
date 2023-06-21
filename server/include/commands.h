@@ -3,7 +3,7 @@
 #include <pop3.h>
 
 // loads the client with current command information
-typedef states_t (*command_handler)(client_t * client_data, char * arg1, int arg1_len, char * arg2, int arg2_len);
+typedef states_t (*command_handler)(struct selector_key * key, char * arg1, int arg1_len, char * arg2, int arg2_len);
 
 typedef struct command command_t;
 

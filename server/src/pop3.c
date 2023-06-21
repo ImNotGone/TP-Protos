@@ -118,6 +118,7 @@ void pop3_server_accept(struct selector_key* key) {
     // ==== Client buffer ====
     buffer_init(&client_data->buffer_in, BUFFSIZE, client_data->buffer_in_data);
     buffer_init(&client_data->buffer_out, BUFFSIZE, client_data->buffer_out_data);
+    buffer_init(&client_data->buffer_fd, BUFFSIZE, client_data->buffer_fd_data);
 
     state_machine_init(&client_data->state_machine);
 

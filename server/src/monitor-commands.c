@@ -25,25 +25,8 @@ static void handle_adduser(struct selector_key *key, char *arg1, int arg1_len, c
         return;
     }
 
-    char * username = malloc(arg1_len + 1);
-    if (username == NULL) {
-        log(LOGGER_ERROR, "%s", "Error allocating memory for username");
-
-        client_data->response = "ERR\r\n";
-        write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
-        return;
-    }
-
-    char * password = malloc(arg2_len + 1);
-    if (password == NULL) {
-        log(LOGGER_ERROR, "%s", "Error allocating memory for password");
-
-        free(username);
-
-        client_data->response = "ERR\r\n";
-        write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
-        return;
-    }
+    char username[arg1_len + 1];
+    char password[arg2_len + 1];
 
     strncpy(username, arg1, arg1_len);
     username[arg1_len] = '\0';
@@ -62,10 +45,69 @@ static void handle_adduser(struct selector_key *key, char *arg1, int arg1_len, c
 }
 
 static void handle_deluser(struct selector_key *key, char *arg1, int arg1_len, char *unused1, int unused2) {
+
+    monitor_client_t * client_data = (monitor_client_t *) key->data;
+    client_data->response_index = 0;
+    client_data->response_is_allocated = false;
+
+    log(LOGGER_DEBUG, "%s", "Handling deluser command");
+
+    if (arg1_len == 0) {
+        log(LOGGER_ERROR, "%s", "Invalid arguments for deluser command");
+
+        client_data->response = "ERR\r\n";
+        write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
+        return;
+    }
+
+    char username[arg1_len + 1];
     
+    strncpy(username, arg1, arg1_len);
+    username[arg1_len] = '\0';
+
+    int result = monitor_delete_user(username);
+    if (result == -1) {
+        client_data->response = "ERR\r\n";
+    } else {
+        client_data->response = "OK\r\n";
+    }
+
+    write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
 }
 
 static void handle_updatepass(struct selector_key *key, char *arg1, int arg1_len, char *arg2, int arg2_len) {
+
+    monitor_client_t * client_data = (monitor_client_t *) key->data;
+    client_data->response_index = 0;
+    client_data->response_is_allocated = false;
+
+    log(LOGGER_DEBUG, "%s", "Handling updatepass command");
+
+    if (arg1_len == 0 || arg2_len == 0) {
+        log(LOGGER_ERROR, "%s", "Invalid arguments for updatepass command");
+
+        client_data->response = "ERR\r\n";
+        write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
+        return;
+    }
+
+    char username[arg1_len + 1];
+    char password[arg2_len + 1];
+
+    strncpy(username, arg1, arg1_len);
+    username[arg1_len] = '\0';
+
+    strncpy(password, arg2, arg2_len);
+    password[arg2_len] = '\0';
+
+    int result = monitor_change_user_password(username, password);
+    if (result == -1) {
+        client_data->response = "ERR\r\n";
+    } else {
+        client_data->response = "OK\r\n";
+    }
+
+    write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
 }
 
 static void handle_updatename(struct selector_key *key, char *arg1, int arg1_len, char *arg2, int arg2_len) {

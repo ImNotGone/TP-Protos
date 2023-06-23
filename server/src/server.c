@@ -131,8 +131,7 @@ int main(void) {
     monitor_addr.sin6_family= AF_INET6;
     monitor_addr.sin6_addr= in6addr_any;
     monitor_addr.sin6_port= htons(PORT_MONITOR);
-
-
+    
     if (bind(server_socket, (SA *)&server_addr, sizeof(server_addr)) < 0) {
         if ((server_socket = socket(AF_INET6, SOCK_STREAM, TCP)) < 0) {
             log(LOGGER_ERROR, "%s", "server socket failed");

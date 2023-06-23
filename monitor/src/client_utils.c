@@ -4,7 +4,6 @@
 #include <string.h>
 #include <errno.h>
 #include <arpa/inet.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 
@@ -51,7 +50,6 @@ int client_socket(const char *host, const char *port){
     {
         fprintf(stderr, "getaddrinfo() failed");
         exit(1);
-        return -1;
     }
 
     int sock = -1;
@@ -67,8 +65,6 @@ int client_socket(const char *host, const char *port){
             {
                 fprintf(stderr, "cant connect");
                 exit(1);
-                close(sock);
-                sock = -1;
             }
         }
     }

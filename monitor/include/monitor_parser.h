@@ -1,13 +1,13 @@
 #ifndef MONITOR_MONITOR_PARSER_H
 #define MONITOR_MONITOR_PARSER_H
 
-#define TOKEN_AND_CMD 2
+#define HOST_TOKEN_AND_CMD 3
 
 #define MAX_ARGS 2
 #define MAX_CMD_LENGTH 40
 
-// 1 auth_token + 1 command + args
-#define MAX_WORDS (2 + MAX_ARGS)
+// 1 host + 1 auth_token + 1 command + args
+#define MAX_WORDS (HOST_TOKEN_AND_CMD + MAX_ARGS)
 
 #define IS_MULTILINE(monitor_instructions) ( (monitor_instructions) == LIST || (monitor_instructions) == LOGS)
 
@@ -24,14 +24,16 @@ typedef enum monitor_instructions{
     CHANGE_USERNAME, // old_username new_username
     CHANGE_PASSWORD, // username new_pass
     HELP, // no args
+    ERROR
 }monitor_instructions;
 
 typedef struct monitor_command {
     monitor_instructions instruction;
+    char * auth_token;
     char * args[MAX_ARGS];
 }monitor_command;
 
-monitor_command *get_user_command(char * user_input);
+monitor_command *get_user_command(char ** user_input);
 
 
 #endif //MONITOR_MONITOR_PARSER_H

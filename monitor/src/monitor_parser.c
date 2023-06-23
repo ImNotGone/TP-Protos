@@ -16,7 +16,7 @@ void set_args(monitor_command * cmd, char ** args){
 
 monitor_instructions get_instruction(const char * cmd){
     if(cmd == NULL){
-        return ERROR;
+        return -1;
     }
     if(strcmp(cmd, "-ADD_USER") == 0){
         return ADD_USER;
@@ -54,10 +54,10 @@ monitor_instructions get_instruction(const char * cmd){
     if(strcmp(cmd, "-HELP") == 0){
         return HELP;
     }
-    return ERROR;
+    return -1;
 }
 
-monitor_command *get_user_command(char * user_input){
+monitor_command *get_user_command(char ** user_input){
     if (user_input == NULL)
         return NULL;
 
@@ -68,8 +68,7 @@ monitor_command *get_user_command(char * user_input){
     int i;
     for (i = 0; user_input[i] != NULL ; i++) {
         if (i >= MAX_WORDS){
-            cmd->instruction = ERROR;
-            return cmd;
+            return NULL;
         }
         parsed_words[i] = user_input[i];
     }
@@ -77,8 +76,12 @@ monitor_command *get_user_command(char * user_input){
     // Command is case-insensitive
     str_toupper(parsed_words[1]);
 
+    cmd->auth_token = parsed_words[0];
     cmd->instruction = get_instruction(parsed_words[1]);
-    set_args(cmd, parsed_words + TOKEN_AND_CMD);
+    if(cmd->instruction == ERROR)
+        return NULL;
+
+    set_args(cmd, parsed_words + HOST_TOKEN_AND_CMD);
 
     return cmd;
 }

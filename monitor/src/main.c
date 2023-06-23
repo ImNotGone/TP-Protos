@@ -21,7 +21,8 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    char * buff[BUFFER_SIZE] = {0};
+    char buff[BUFFER_SIZE] = {0};
+    char * aux = buff;
 
     /*
     ssize_t bytes_sent = send(socket, buff, BUFFER_SIZE, 0);
@@ -40,37 +41,40 @@ int main(int argc, char **argv) {
     }
 
     bool error = false;
+    int offset = sprintf((char*)buff, "%s ", command->auth_token);
+    aux = buff + offset;
 
     switch (command->instruction) {
         case ADD_USER:
-            sprintf((char*)buff, "ADDUSER %s %s\r\n", command->args[0], command->args[1]);
+            sprintf(aux, "ADDUSER %s %s\r\n", command->args[0], command->args[1]);
+            printf("%s", buff);
             break;
         case DELETE_USER:
-            sprintf((char*)buff, "DELUSER %s\r\n", command->args[0]);
+            sprintf(aux, "DELUSER %s\r\n", command->args[0]);
             break;
         case SET_MAX_USERS:
-            sprintf((char*)buff, "MAXUSERS %s\r\n", command->args[0]);
+            sprintf(aux, "MAXUSERS %s\r\n", command->args[0]);
             break;
         case SET_MAX_CONNS:
-            sprintf((char*)buff, "MAXCONNS %s\r\n", command->args[0]);
+            sprintf(aux, "MAXCONNS %s\r\n", command->args[0]);
             break;
         case LIST:
-            sprintf((char*)buff, "LISTUSERS\r\n");
+            sprintf(aux, "LISTUSERS\r\n");
             break;
         case BYTES:
-            sprintf((char*)buff, "BYTES\r\n");
+            sprintf(aux, "BYTES\r\n");
             break;
         case LOGS:
-            sprintf((char*)buff, "LOGS\r\n");
+            sprintf(aux, "LOGS\r\n");
             break;
         case CHANGE_USERNAME:
-            sprintf((char*)buff, "UPDATENAME %s %s\r\n", command->args[0], command->args[1]);
+            sprintf(aux, "UPDATENAME %s %s\r\n", command->args[0], command->args[1]);
             break;
         case CHANGE_PASSWORD:
-            sprintf((char*)buff, "UPDATEPASS %s %s\r\n", command->args[0], command->args[1]);
+            sprintf(aux, "UPDATEPASS %s %s\r\n", command->args[0], command->args[1]);
             break;
         case HELP:
-            sprintf((char*)buff, "HELP\r\n");
+            sprintf(aux, "HELP\r\n");
             break;
         default:
             error = true;

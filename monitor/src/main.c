@@ -19,8 +19,6 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    printf("Connecting to %s:%s\n", argv[1], PORT_MONITOR);
-
     int socket = client_socket(argv[1], PORT_MONITOR);
 
     if (socket < 0) {
@@ -35,7 +33,7 @@ int main(int argc, char **argv) {
 
     int exit_value = EXIT_SUCCESS;
     if (command == NULL) {
-        fprintf(stderr, "Invalid command\n");
+        fprintf(stderr, "Invalid command or arguments\n");
         exit_value = EXIT_FAILURE;
         goto exit;
     }
@@ -47,7 +45,6 @@ int main(int argc, char **argv) {
     switch (command->instruction) {
         case ADD_USER:
             sprintf(aux, "ADDUSER %s %s\r\n", command->args[0], command->args[1]);
-            printf("%s", buff);
             break;
         case DELETE_USER:
             sprintf(aux, "DELUSER %s\r\n", command->args[0]);
@@ -61,8 +58,8 @@ int main(int argc, char **argv) {
         case LIST:
             sprintf(aux, "LISTUSERS\r\n");
             break;
-        case BYTES:
-            sprintf(aux, "BYTES\r\n");
+        case METRICS:
+            sprintf(aux, "METRICS\r\n");
             break;
         case LOGS:
             sprintf(aux, "LOGS\r\n");

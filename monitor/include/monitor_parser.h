@@ -9,17 +9,15 @@
 // 1 host + 1 auth_token + 1 command + args
 #define MAX_WORDS (TOKEN_AND_CMD + MAX_ARGS)
 
-#define IS_MULTILINE(monitor_instructions) ( (monitor_instructions) == LIST || (monitor_instructions) == LOGS)
+#define IS_MULTILINE(monitor_instructions) ( (monitor_instructions) == LIST || (monitor_instructions) == LOGS || (monitor_instructions) == METRICS)
 
 typedef enum monitor_instructions{
     ADD_USER, // user pass
     DELETE_USER, //user
     SET_MAX_USERS,// num
-    GET_MAX_USERS, // no args
     SET_MAX_CONNS, // num
-    GET_MAX_CONNS, // no args
     LIST, // no args
-    BYTES, // no args
+    METRICS, // no args
     LOGS, // no args
     CHANGE_USERNAME, // old_username new_username
     CHANGE_PASSWORD, // username new_pass

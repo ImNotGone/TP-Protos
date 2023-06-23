@@ -10,6 +10,7 @@
 #include <selector.h>
 #include <common.h>
 #include <pop3.h>
+#include <monitor-server.h>
 #include <logger.h>
 #include <monitor.h>
 
@@ -60,7 +61,7 @@ int main(void) {
     };
 
     const fd_handler monitor_socket_handler = {
-            .handle_read = NULL, //TODO ver que funcion va aca
+            .handle_read = monitor_server_accept,
             .handle_write = NULL,
             .handle_block = NULL,
             .handle_close = NULL,

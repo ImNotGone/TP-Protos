@@ -58,7 +58,7 @@ Junio 2023                                                      [Pag. 1]
     se cierra la conexión.
 
     Los comandos consisten en un token de autenticación seguido de un
-    espacio y una palabra clave "case insensitive" que identifica el
+    punto y coma ';' y una palabra clave "case insensitive" que identifica el
     comando. Luego de la palabra clave se pueden enviar argumentos
     separados por espacios. El comando finaliza con un par CR LF.
     Todo el contenido del comando debe consitir de caracteres ASCII
@@ -98,10 +98,10 @@ Junio 2023                                                      [Pag. 2]
 
       Ejemplo:
 
-        C: auth_token ADDUSER user1 pass1
+        C: auth_token;ADDUSER user1 pass1
         S: OK
 
-        C: auth_token ADDUSER existing_user pass2
+        C: auth_token;ADDUSER existing_user pass2
         S: ERR
 
     - DELUSER: Elimina un usuario del servidor. El comando recibe como
@@ -111,10 +111,10 @@ Junio 2023                                                      [Pag. 2]
 
       Ejemplo:
 
-        C: auth_token DELUSER user1
+        C: auth_token;DELUSER user1
         S: OK
 
-        C: auth_token DELUSER non_existing_user
+        C: auth_token;DELUSER non_existing_user
         S: ERR
 
     - UPDATEPASS: Actualiza la contraseña de un usuario. El comando
@@ -123,10 +123,10 @@ Junio 2023                                                      [Pag. 2]
 
       Ejemplo:
 
-        C: auth_token UPDATEPASS user1 new_pass
+        C: auth_token;UPDATEPASS user1 new_pass
         S: OK
 
-        C: auth_token UPDATEPASS non_existing_user new_pass
+        C: auth_token;UPDATEPASS non_existing_user new_pass
         S: ERR
 
     - UPDATENAME: Actualiza el nombre de un usuario. El comando recibe
@@ -135,10 +135,10 @@ Junio 2023                                                      [Pag. 2]
 
       Ejemplo:
 
-        C: auth_token UPDATENAME user1 new_name
+        C: auth_token;UPDATENAME user1 new_name
         S: OK
 
-        C: auth_token UPDATENAME non_existing_user new_name
+        C: auth_token;UPDATENAME non_existing_user new_name
         S: ERR
 
     - LISTUSERS: Lista los usuarios del servidor. El comando no recibe
@@ -148,14 +148,14 @@ Junio 2023                                                      [Pag. 2]
 
       Ejemplo:
 
-        C: auth_token LISTUSERS
+        C: auth_token;LISTUSERS
         S: OK
         S: user1
         S: user2
         S: user3
         S: .
 
-        C: auth_token LISTUSERS
+        C: auth_token;LISTUSERS
         S: ERR
 
 
@@ -174,14 +174,14 @@ Junio 2023                                                      [Pag. 3]
 
       Ejemplo:
 
-        C: auth_token METRICS
+        C: auth_token;METRICS
         S: OK
         S: 1
         S: 2
         S: 100
         S: .
 
-        C: auth_token METRICS
+        C: auth_token;METRICS
         S: ERR
 
     - LOGS: Obtiene los accesos de todos los usuarios durante el tiempo
@@ -193,14 +193,14 @@ Junio 2023                                                      [Pag. 3]
 
       Ejemplo:
         
-        C: auth_token LOGS
+        C: auth_token;LOGS
         S: OK
         S: user1 2021-06-20 20:00:00
         S: user2 2021-06-20 20:00:01
         S: user3 2021-06-20 20:00:02
         S: .
 
-        C: auth_token LOGS
+        C: auth_token;LOGS
         S: ERR
 
     - MAXUSERS: Configura la cantidad máxima de usuarios que puede tener
@@ -210,10 +210,10 @@ Junio 2023                                                      [Pag. 3]
 
       Ejemplo:
 
-        C: auth_token MAXUSERS 10
+        C: auth_token;MAXUSERS 10
         S: OK
 
-        C: auth_token MAXUSERS 0
+        C: auth_token;MAXUSERS 0
         S: ERR
 
     - MAXCONNS: Configura la cantidad máxima de conexiones que puede
@@ -223,10 +223,10 @@ Junio 2023                                                      [Pag. 3]
 
       Ejemplo:
 
-        C: auth_token MAXCONNS 10
+        C: auth_token;MAXCONNS 10
         S: OK
 
-        C: auth_token MAXCONNS 0
+        C: auth_token;MAXCONNS 0
         S: ERR
 
 
@@ -238,10 +238,10 @@ Junio 2023                                                      [Pag. 3]
 
       Ejemplo:
 
-        C: auth_token MAXQUEUE 10
+        C: auth_token;MAXQUEUE 10
         S: OK
 
-        C: auth_token MAXQUEUE 0
+        C: auth_token;MAXQUEUE 0
         S: ERR
         
 

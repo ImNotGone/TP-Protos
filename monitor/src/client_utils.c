@@ -1,6 +1,4 @@
-#include "../include/client_utils.h"
-#include <stdbool.h>
-#include <stdio.h>
+#include <client_utils.h>
 #include <unistd.h>
 
 int monitor_response_handler(FILE * monitor_fd, bool multiline_response){

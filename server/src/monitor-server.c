@@ -121,6 +121,9 @@ static void monitor_client_read(struct selector_key * key) {
         log(LOGGER_DEBUG, "read %c from monitor sd:%d", client_data->request[client_data->request_index - 1], key->fd);
 
         if (client_data->request[client_data->request_index - 2] == '\r' && client_data->request[client_data->request_index - 1] == '\n') {
+            // Replace \r\n with \0\0
+            client_data->request[client_data->request_index - 2] = '\0';
+            client_data->request[client_data->request_index - 1] = '\0';
             client_data->finished_request = true;
         }
     }

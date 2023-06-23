@@ -13,4 +13,7 @@ struct monitor_command {
 };
 
 monitor_command_t * get_monitor_command(char * command);
+
+void handle_unauthorized(struct selector_key *key);
+
 #endif

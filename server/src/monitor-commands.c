@@ -4,6 +4,9 @@
 #include <logger.h>
 #include <stdio.h>
 
+
+static int number_of_digits(int n);
+
 static void write_response_in_buffer(struct buffer * buffer, char * response, size_t * dim) {
     while (buffer_can_write(buffer) && response[*dim] != '\0') {
         buffer_write(buffer, response[*dim]);
@@ -153,6 +156,8 @@ static void handle_listusers(struct selector_key *key, char *unused1, int unused
     client_data->response_index = 0;
     client_data->response_is_allocated = false;
 
+    log(LOGGER_DEBUG, "%s", "Handling listusers command");
+
     if (unused1 != NULL || unused2 != 0 || unused3 != NULL || unused4 != 0) {
         log(LOGGER_ERROR, "%s", "Invalid arguments for listusers command");
 
@@ -161,7 +166,6 @@ static void handle_listusers(struct selector_key *key, char *unused1, int unused
         return;
     }
 
-    log(LOGGER_DEBUG, "%s", "Handling listusers command");
 
     char ** users = monitor_get_usernames();
 
@@ -215,6 +219,54 @@ static void handle_listusers(struct selector_key *key, char *unused1, int unused
 }
 
 static void handle_metrics(struct selector_key *key, char *unused1, int unused2, char *unused3, int unused4) {
+    
+    monitor_client_t * client_data = (monitor_client_t *) key->data;
+    client_data->response_index = 0;
+    client_data->response_is_allocated = false;
+
+    log(LOGGER_DEBUG, "%s", "Handling metrics command");
+
+    if (unused1 != NULL || unused2 != 0 || unused3 != NULL || unused4 != 0) {
+        log(LOGGER_ERROR, "%s", "Invalid arguments for metrics command");
+
+        client_data->response = "ERR\r\n";
+        write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
+        return;
+    }
+
+    ssize_t current_connections = monitor_get_current_connections();
+    ssize_t historical_connections = monitor_get_historical_connections();
+    ssize_t bytes_transferred = monitor_get_bytes_transf();
+
+    log(LOGGER_DEBUG, "Current connections: %ld", current_connections);
+    log(LOGGER_DEBUG, "Historical connections: %ld", historical_connections);
+    log(LOGGER_DEBUG, "Bytes transferred: %ld", bytes_transferred);
+
+    int current_connections_len = number_of_digits(current_connections);
+    int historical_connections_len = number_of_digits(historical_connections);
+    int bytes_transferred_len = number_of_digits(bytes_transferred);
+
+    const char *ok = "OK\r\n";
+    const char *crlf = "\r\n";
+    const char *dotcrlf = ".\r\n";
+
+    int bytes_needed = strlen(ok) + strlen(crlf) + current_connections_len + strlen(crlf) + historical_connections_len + strlen(crlf) + bytes_transferred_len + strlen(dotcrlf) + 1;
+
+    char *response = malloc(bytes_needed);
+    if (response == NULL) {
+        log(LOGGER_ERROR, "%s", "Error allocating memory for response");
+
+        client_data->response = "ERR\r\n";
+        write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
+        return;
+    }
+
+    sprintf(response, "%s%s%zd%s%zd%s%zd%s", ok, crlf, current_connections, crlf, historical_connections, crlf, bytes_transferred, dotcrlf);
+
+    client_data->response = response;
+    client_data->response_is_allocated = true;
+
+    write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
 }
 
 static void handle_logs(struct selector_key *key, char *unused1, int unused2, char *unused3, int unused4) {
@@ -274,4 +326,20 @@ monitor_command_t *get_monitor_command(char * command) {
 void handle_unauthorized(struct selector_key *key) {
     log(LOGGER_DEBUG, "%s", "Unauthorized access");
     error_handler(key, NULL, 0, NULL, 0);
+}
+
+
+static int number_of_digits(int n) {
+    int digits = 0;
+
+    if (n == 0) {
+        return 1;
+    }
+
+    while (n != 0) {
+        n /= 10;
+        digits++;
+    }
+
+    return digits;
 }

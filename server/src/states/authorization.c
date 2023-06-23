@@ -1,6 +1,7 @@
 #include <buffer.h>
 #include <commands.h>
 #include <errno.h>
+#include <monitor.h>
 #include <logger.h>
 #include <message-manager.h>
 #include <responses.h>
@@ -102,6 +103,20 @@ static states_t handle_pass(struct selector_key * key, char *pass, int unused1, 
         client_data->response = RESPONSE_PASS_SUCCESS;
         client_data->authenticated = true;
         client_data->response_is_allocated = false;
+
+        if (monitor_add_log(client_data->user) == -1) {
+            switch (errno) {
+            case ENOMEM:
+                log(LOGGER_ERROR, "%s", "Error adding user log to monitor: Insufficient memory.");
+                break;
+            default:
+                log(LOGGER_ERROR, "%s", "Error adding user to monitor: Unknown error occurred.");
+                break;
+            }
+
+            return ERROR;
+        }
+
         states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
 
         return TRANSACTION;

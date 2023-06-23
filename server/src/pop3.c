@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <monitor.h>
 #include <logger.h>
 #include <states/greeting.h>
 #include <states/authorization.h>
@@ -133,8 +134,7 @@ void pop3_server_accept(struct selector_key* key) {
         return;
     }
 
-    // TODO: metric log client
-    // TODO: metric increment client count
+    monitor_add_connection();
 
     log(LOGGER_INFO, "client connection with sd:%d accepted", client_sd);
     return;
@@ -203,5 +203,8 @@ static void pop3_client_close(struct selector_key * key) {
 
     state_machine_handler_close(state_machine, key);
     log(LOGGER_INFO, "closing client with sd:%d", client_data->client_sd);
+
+    monitor_remove_connection();
+
     close_connection(key);
 }

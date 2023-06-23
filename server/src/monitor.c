@@ -1,4 +1,5 @@
 #include <monitor.h>
+#include <logger.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <user-manager.h>
@@ -99,7 +100,7 @@ int monitor_init(unsigned max_users, unsigned max_conns, unsigned queued_conns){
     return 0;
 }
 
-int monitor_add_connection(char * username){
+int monitor_add_log(char * username){
     NULL_CHECK
 
     if(username == NULL){
@@ -128,10 +129,27 @@ int monitor_add_connection(char * username){
 
     monitor->last_log = new_node;
 
-    monitor->metrics->historic_conns++;
-    monitor->metrics->current_conns++;
-
     return 0;
+}
+
+void monitor_add_connection(void){
+    monitor->metrics->current_conns++;
+    monitor->metrics->historic_conns++;
+    log(LOGGER_DEBUG, "Current connections: %d", monitor->metrics->current_conns);
+    log(LOGGER_DEBUG, "Historic connections: %d", monitor->metrics->historic_conns);
+}
+
+void monitor_remove_connection(void){
+    monitor->metrics->current_conns != 0 ? monitor->metrics->current_conns-- : 0;
+    log(LOGGER_DEBUG, "Current connections: %d", monitor->metrics->current_conns);
+}
+
+ssize_t monitor_get_current_connections(void) {
+    return monitor->metrics->current_conns;
+}
+
+ssize_t monitor_get_historical_connections(void) {
+    return monitor->metrics->historic_conns;
 }
 
 int monitor_add_user(char * username, char * password){

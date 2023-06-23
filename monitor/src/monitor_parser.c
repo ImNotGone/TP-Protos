@@ -57,7 +57,7 @@ monitor_instructions get_instruction(const char * cmd){
     return ERROR;
 }
 
-monitor_command *get_user_command(char ** user_input){
+monitor_command *get_user_command(char * user_input){
     if (user_input == NULL)
         return NULL;
 

@@ -8,7 +8,7 @@
 
 #define CRLF "\r\n"
 
-int monitor_response_handler(FILE * monitor_fd, bool multiline_response);
+int monitor_response_handler(int socket, bool multiline_response);
 int client_socket(const char *host, const char *port);
 
 #endif //TP_PROTOS_CLIENT_UTILS_H

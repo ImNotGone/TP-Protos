@@ -3,8 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <sys/socket.h>
 
 #define PORT_MONITOR "8889"
+#define RESPONSE_SIZE 40
 
 int main(int argc, char **argv) {
     if (argc > MAX_WORDS + 2)
@@ -22,8 +24,8 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    FILE *server = fdopen(socket, "r+");
-
+    char buff[BUFFER_SIZE] = {0};
+    char * aux = buff;
     monitor_command *command = NULL;
     command = get_user_command(argv + 2);
 
@@ -33,38 +35,40 @@ int main(int argc, char **argv) {
     }
 
     bool error = false;
-    fprintf(server, "%s ", command->auth_token);
+    int offset = sprintf((char*)buff, "%s ", command->auth_token);
+    aux = buff + offset;
 
     switch (command->instruction) {
         case ADD_USER:
-            fprintf(server, "ADDUSER %s %s\r\n", command->args[0], command->args[1]);
+            sprintf(aux, "ADDUSER %s %s\r\n", command->args[0], command->args[1]);
+            printf("%s", buff);
             break;
         case DELETE_USER:
-            fprintf(server, "DELUSER %s\r\n", command->args[0]);
+            sprintf(aux, "DELUSER %s\r\n", command->args[0]);
             break;
         case SET_MAX_USERS:
-            fprintf(server, "MAXUSERS %s\r\n", command->args[0]);
+            sprintf(aux, "MAXUSERS %s\r\n", command->args[0]);
             break;
         case SET_MAX_CONNS:
-            fprintf(server, "MAXCONNS %s\r\n", command->args[0]);
+            sprintf(aux, "MAXCONNS %s\r\n", command->args[0]);
             break;
         case LIST:
-            fprintf(server, "LISTUSERS\r\n");
+            sprintf(aux, "LISTUSERS\r\n");
             break;
         case BYTES:
-            fprintf(server, "BYTES\r\n");
+            sprintf(aux, "BYTES\r\n");
             break;
         case LOGS:
-            fprintf(server, "LOGS\r\n");
+            sprintf(aux, "LOGS\r\n");
             break;
         case CHANGE_USERNAME:
-            fprintf(server, "UPDATENAME %s %s\r\n", command->args[0], command->args[1]);
+            sprintf(aux, "UPDATENAME %s %s\r\n", command->args[0], command->args[1]);
             break;
         case CHANGE_PASSWORD:
-            fprintf(server, "UPDATEPASS %s %s\r\n", command->args[0], command->args[1]);
+            sprintf(aux, "UPDATEPASS %s %s\r\n", command->args[0], command->args[1]);
             break;
         case HELP:
-            fprintf(server, "HELP\r\n");
+            sprintf(aux, "HELP\r\n");
             break;
         default:
             error = true;
@@ -72,8 +76,8 @@ int main(int argc, char **argv) {
     }
 
     if (!error) {
-        fflush(server);
-        if (monitor_response_handler(server, IS_MULTILINE(command->instruction)) == -1) {
+        send(socket, buff, BUFFER_SIZE, 0);
+        if (monitor_response_handler(socket, IS_MULTILINE(command->instruction)) == -1) {
             fprintf(stderr, "Server error\n");
             exit(1);
         }

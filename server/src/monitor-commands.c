@@ -352,7 +352,7 @@ static void handle_maxconns(struct selector_key *key, char *arg1, int arg1_len, 
     client_data->response_is_allocated = false;
 
     if (arg1 == NULL || arg1_len == 0 || unused1 != NULL || unused2 != 0) {
-        log(LOGGER_ERROR, "%s", "Invalid arguments for set max users command");
+        log(LOGGER_ERROR, "%s", "Invalid arguments for set max connections command");
 
         client_data->response = "ERR\r\n";
         write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);

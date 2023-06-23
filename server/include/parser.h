@@ -11,10 +11,6 @@
 #define MAX_ARG_LEN     255 - MAX_COMMAND_LEN
 #define MAX_ARG_COUNT   2
 
-#define MONITOR_MAX_TOKEN_LEN 40
-#define MONITOR_MAX_COMMAND_LEN 11
-#define MONITOR_MAX_ARG_LEN 40
-#define MONITOR_MAX_ARG_COUNT 2
 
 typedef enum {
     PARSING,

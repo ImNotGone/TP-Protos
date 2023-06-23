@@ -12,5 +12,5 @@ struct monitor_command {
     monitor_command_handler command_handler;
 };
 
-monitor_command_t * get_monitor_command(monitor_client_t * client_data, struct parser_event * parser_event, bool *authorized);
+monitor_command_t * get_monitor_command(char * command);
 #endif

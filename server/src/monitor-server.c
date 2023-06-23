@@ -43,9 +43,6 @@ void monitor_server_accept(struct selector_key * key) {
     client_data->closed = false;
     client_data->client_sd = client_sd;
 
-    // ===== Client Parser =====
-    client_data->parser = parser_init(monitor_parser_configuration_get());
-
     // ===== Client buffer =====
     buffer_init(&client_data->buffer_in, BUFFSIZE, client_data->buffer_in_data);
     buffer_init(&client_data->buffer_out, BUFFSIZE, client_data->buffer_out_data);
@@ -83,7 +80,6 @@ static void monitor_client_close_connection(struct selector_key * key) {
 
     selector_unregister_fd(key->s, client_data->client_sd);
     close(client_data->client_sd);
-    parser_destroy(client_data->parser);
     free(client_data);
 }
 
@@ -112,45 +108,24 @@ static void monitor_client_read(struct selector_key * key) {
     log(LOGGER_DEBUG, "recv %ld bytes from monitor sd:%d", bytes_read, key->fd);
     buffer_write_adv(&client_data->buffer_in, bytes_read);
 
-    struct parser_event * parser_event;
-    monitor_command_t *command = NULL;
-
-    // Process inpout while is possible
-    while (buffer_can_read(&client_data->buffer_in)) {
-        
-        parser_event = parser_consume(client_data->parser, buffer_read(&client_data->buffer_in));
-
-        // Continue parsing
-        if (parser_event->parsing_status != DONE) {
-            continue;
-        }
-
-        if (parser_event->has_errors) {
-            log(LOGGER_ERROR, "monitor parser error on sd:%d", key->fd);
+    // Process input while is possible
+    while (client_data->finished_request && buffer_can_read(&client_data->buffer_in)) {
+        if (client_data->request_index >= MAX_REQUEST_LENGTH) {
+            log(LOGGER_ERROR, "client request surpassed max request length on monitor sd:%d", key->fd);
             monitor_client_close_connection(key);
             return;
         }
 
-        bool authorized;
-        command = get_monitor_command(client_data, parser_event, &authorized);
+        client_data->request[client_data->request_index++] = buffer_read(&client_data->buffer_in);
 
-        log(LOGGER_DEBUG, "monitor command: %s", command->name);
-
-        if(command == NULL) {
-            log(LOGGER_ERROR, "Illegal state on monitor sd:%d", key->fd);
-            return;
+        if (client_data->request[client_data->request_index - 1] == '\r' && client_data->request[client_data->request_index] == '\n') {
+            client_data->finished_request = true;
         }
     }
 
-    // If command is NULL, it means that the command is not complete yet
-    if(command == NULL) {
-        return;
+    if (client_data->finished_request) {
+        parse_client_request(key);
     }
-
-    // If command is not NULL, it means that the command is complete and can be executed
-    // Reading from client socket complete, now we can execute the command
-
-    command->command_handler(key, (char *)parser_event->args[0], parser_event->args_len[0], (char *)parser_event->args[1], parser_event->args_len[1]);
 
     // Change selector interest to write
     if(selector_set_interest_key(key, OP_WRITE)  != SELECTOR_SUCCESS) {

@@ -1,6 +1,12 @@
 #include <monitor-commands.h>
 #include <string.h>
 
+static void write_response_in_buffer(struct buffer * buffer, char * response, size_t * dim) {
+    while (buffer_can_write(buffer) && response[*dim] != '\0') {
+        buffer_write(buffer, response[*dim]);
+        (*dim)++;
+    }
+}
 
 static void handle_adduser(struct selector_key *key, char *arg1, int arg1_len, char *arg2, int arg2_len) {
     monitor_client_t * client_data = (monitor_client_t *) key->data;
@@ -8,6 +14,8 @@ static void handle_adduser(struct selector_key *key, char *arg1, int arg1_len, c
     client_data->response_index = 0;
     client_data->response = "HOLIS\r\n";
     client_data->response_is_allocated = false;
+
+    write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
 }
 
 static void handle_deluser(struct selector_key *key, char *arg1, int arg1_len, char *unused1, int unused2) {

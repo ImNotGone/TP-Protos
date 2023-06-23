@@ -109,7 +109,7 @@ static void monitor_client_read(struct selector_key * key) {
     buffer_write_adv(&client_data->buffer_in, bytes_read);
 
     // Process input while is possible
-    while (client_data->finished_request && buffer_can_read(&client_data->buffer_in)) {
+    while (!client_data->finished_request && buffer_can_read(&client_data->buffer_in)) {
         if (client_data->request_index >= MAX_REQUEST_LENGTH) {
             log(LOGGER_ERROR, "client request surpassed max request length on monitor sd:%d", key->fd);
             monitor_client_close_connection(key);
@@ -118,20 +118,20 @@ static void monitor_client_read(struct selector_key * key) {
 
         client_data->request[client_data->request_index++] = buffer_read(&client_data->buffer_in);
 
-        if (client_data->request[client_data->request_index - 1] == '\r' && client_data->request[client_data->request_index] == '\n') {
+        log(LOGGER_DEBUG, "read %c from monitor sd:%d", client_data->request[client_data->request_index - 1], key->fd);
+
+        if (client_data->request[client_data->request_index - 2] == '\r' && client_data->request[client_data->request_index - 1] == '\n') {
             client_data->finished_request = true;
         }
     }
 
     if (client_data->finished_request) {
-        parse_client_request(key);
-    }
-
-    // Change selector interest to write
-    if(selector_set_interest_key(key, OP_WRITE)  != SELECTOR_SUCCESS) {
-        log(LOGGER_ERROR, "error setting monitor selector interest to write on sd:%d", key->fd);
-        monitor_client_close_connection(key);
-        return;
+        parse_client_request(key);    // Change selector interest to write
+        if(selector_set_interest_key(key, OP_WRITE)  != SELECTOR_SUCCESS) {
+            log(LOGGER_ERROR, "error setting monitor selector interest to write on sd:%d", key->fd);
+            monitor_client_close_connection(key);
+            return;
+        }
     }
 }
 
@@ -147,10 +147,12 @@ static void monitor_client_write(struct selector_key * key) {
 
     if(bytes_sent < 0) {
         log(LOGGER_ERROR, "send() < 0 on monitor sd:%d", key->fd);
+        monitor_client_close_connection(key);
         return;
     }
     if(bytes_sent == 0) {
         log(LOGGER_ERROR, "send() == 0 on monitor sd:%d", key->fd);
+        monitor_client_close_connection(key);
         return;
     }
     log(LOGGER_INFO, "sent %ld bytes to monitor sd:%d", bytes_sent, key->fd);

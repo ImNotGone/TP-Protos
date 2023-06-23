@@ -118,6 +118,9 @@ struct parser_configuration *monitor_parser_configuration_get(void) {
 }
 
 int parse_client_request(struct selector_key *key) {
+
+    log(LOGGER_DEBUG, "%s", "parsing client request");
+
     if(key == NULL)
         return -1;
 
@@ -136,13 +139,19 @@ int parse_client_request(struct selector_key *key) {
     int index = 0;
     char *save_ptr = line;
 
+    log(LOGGER_DEBUG, "token: %s", parsed_words[0]);
+
     parsed_words[index++] = strtok_r(save_ptr, " ", &save_ptr);
+
 
     if (parsed_words[0] == NULL)
         return -1;
 
+    log(LOGGER_DEBUG, "token: %s", parsed_words[0]);
+
     char *token;
     while ((token = strtok_r(save_ptr, " ", &save_ptr)) != NULL) {
+        log(LOGGER_DEBUG, "token: %s", token);
         if (index >= MAX_WORDS) {
             return -1;
         }
@@ -172,6 +181,10 @@ int parse_client_request(struct selector_key *key) {
             }
             command->command_handler(key, parsed_words[2], strlen(parsed_words[2]), parsed_words[3],
                                      strlen(parsed_words[3]));
+            break;
+        default:
+            command->command_handler(key, NULL, 0, NULL, 0);
+            
     }
 
     return 0;

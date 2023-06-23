@@ -191,6 +191,12 @@ int monitor_set_max_conns(unsigned val){
     return 0;
 }
 
+int monitor_set_queued_conns(unsigned val){
+    NULL_CHECK
+    monitor->config->queued_conns=val;
+    return 0;
+}
+
 int monitor_change_user_username(char * old_username, char * new_username){
     return user_manager_change_username(old_username, new_username);
 }

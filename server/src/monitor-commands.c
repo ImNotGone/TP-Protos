@@ -316,19 +316,17 @@ static void handle_logs(struct selector_key *key, char *unused1, int unused2, ch
     write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
 }
 
-static void handle_maxusers(struct selector_key *key, char *arg1, int arg1_len, char *unused1, int unused2) {
-    log(LOGGER_DEBUG, "%s", "Handling set max users command");
-
+static int handle_setter(struct selector_key *key, char *arg1, int arg1_len, char *unused1, int unused2){
     monitor_client_t * client_data = (monitor_client_t *) key->data;
     client_data->response_index = 0;
     client_data->response_is_allocated = false;
 
     if (arg1 == NULL || arg1_len == 0 || unused1 != NULL || unused2 != 0) {
-        log(LOGGER_ERROR, "%s", "Invalid arguments for set max users command");
+        log(LOGGER_ERROR, "%s", "Invalid arguments for setter command");
 
         client_data->response = "ERR\r\n";
         write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
-        return;
+        return -1;
     }
 
     int value = strtol(arg1, NULL, 10);
@@ -338,8 +336,16 @@ static void handle_maxusers(struct selector_key *key, char *arg1, int arg1_len, 
 
         client_data->response = "ERR\r\n";
         write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
-        return;
+        return -1;
     }
+
+    return value;
+}
+
+static void handle_maxusers(struct selector_key *key, char *arg1, int arg1_len, char *unused1, int unused2) {
+    log(LOGGER_DEBUG, "%s", "Handling set max users command");
+
+    int value = handle_setter(key, arg1, arg1_len, unused1, unused2);
 
     monitor_set_max_users(value);
 }
@@ -347,32 +353,17 @@ static void handle_maxusers(struct selector_key *key, char *arg1, int arg1_len, 
 static void handle_maxconns(struct selector_key *key, char *arg1, int arg1_len, char *unused1, int unused2) {
     log(LOGGER_DEBUG, "%s", "Handling set max connections command");
 
-    monitor_client_t * client_data = (monitor_client_t *) key->data;
-    client_data->response_index = 0;
-    client_data->response_is_allocated = false;
-
-    if (arg1 == NULL || arg1_len == 0 || unused1 != NULL || unused2 != 0) {
-        log(LOGGER_ERROR, "%s", "Invalid arguments for set max connections command");
-
-        client_data->response = "ERR\r\n";
-        write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
-        return;
-    }
-
-    int value = strtol(arg1, NULL, 10);
-
-    if (value <= 0) {
-        log(LOGGER_ERROR, "%s", "Argument must be positive number");
-
-        client_data->response = "ERR\r\n";
-        write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
-        return;
-    }
+    int value = handle_setter(key, arg1, arg1_len, unused1, unused2);
 
     monitor_set_max_conns(value);
 }
 
 static void handle_maxqueue(struct selector_key *key, char *arg1, int arg1_len, char *unused1, int unused2) {
+    log(LOGGER_DEBUG, "%s", "Handling set queued connections command");
+
+    int value = handle_setter(key, arg1, arg1_len, unused1, unused2);
+
+    monitor_set_queued_conns(value);
 }
 
 static void error_handler(struct selector_key *key, char *unused1, int unused2, char *unused3, int unused4) {

@@ -13,6 +13,7 @@ int monitor_add_bytes(ssize_t bytes_sent);
 
 int monitor_set_max_users(unsigned val);
 int monitor_set_max_conns(unsigned val);
+int monitor_set_queued_conns(unsigned val);
 
 char ** monitor_get_usernames(void);
 ssize_t monitor_get_bytes_transf(void);

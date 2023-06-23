@@ -47,25 +47,19 @@ int main(int argc, char **argv) {
 
         switch (command->instruction) {
             case ADD_USER:
-                fprintf(server, "ADD_USER %s %s\r\n", command->args[0], command->args[1]);
+                fprintf(server, "ADDUSER %s %s\r\n", command->args[0], command->args[1]);
                 break;
             case DELETE_USER:
-                fprintf(server, "DELETE_USER %s\r\n", command->args[0]);
+                fprintf(server, "DELUSER %s\r\n", command->args[0]);
                 break;
             case SET_MAX_USERS:
-                fprintf(server, "SET_MAX_USERS %s\r\n", command->args[0]);
-                break;
-            case GET_MAX_USERS:
-                fprintf(server, "GET_MAX_USERS\r\n");
+                fprintf(server, "MAXUSERS %s\r\n", command->args[0]);
                 break;
             case SET_MAX_CONNS:
-                fprintf(server, "SET_MAX_CONNS %s\r\n", command->args[0]);
-                break;
-            case GET_MAX_CONNS:
-                fprintf(server, "GET_MAX_CONNS\r\n");
+                fprintf(server, "MAXCONNS %s\r\n", command->args[0]);
                 break;
             case LIST:
-                fprintf(server, "LIST\r\n");
+                fprintf(server, "LISTUSERS\r\n");
                 break;
             case BYTES:
                 fprintf(server, "BYTES\r\n");
@@ -74,10 +68,10 @@ int main(int argc, char **argv) {
                 fprintf(server, "LOGS\r\n");
                 break;
             case CHANGE_USERNAME:
-                fprintf(server, "CHANGE_USERNAME %s %s\r\n", command->args[0], command->args[1]);
+                fprintf(server, "UPDATENAME %s %s\r\n", command->args[0], command->args[1]);
                 break;
             case CHANGE_PASSWORD:
-                fprintf(server, "CHANGE_PASSWORD %s %s\r\n", command->args[0], command->args[1]);
+                fprintf(server, "UPDATEPASS %s %s\r\n", command->args[0], command->args[1]);
                 break;
             case HELP:
                 fprintf(server, "HELP\r\n");

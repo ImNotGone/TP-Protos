@@ -182,6 +182,7 @@ int monitor_add_bytes(ssize_t bytes_sent){
 int monitor_set_max_users(unsigned val){
     NULL_CHECK
     monitor->config->max_users=val;
+    log(LOGGER_DEBUG, "Max users: %d", monitor->config->max_users);
     return 0;
 }
 
@@ -191,11 +192,27 @@ int monitor_set_max_conns(unsigned val){
     return 0;
 }
 
-int monitor_set_queued_conns(unsigned val){
+int monitor_set_queued_conns(unsigned val) {
     NULL_CHECK
     monitor->config->queued_conns=val;
     return 0;
 }
+
+int monitor_get_max_users(void) {
+    NULL_CHECK
+    return monitor->config->max_users;
+}
+
+int monitor_get_max_conns(void) {
+    NULL_CHECK
+    return monitor->config->max_conns;
+}
+
+int monitor_get_queued_conns(void) {
+    NULL_CHECK
+    return monitor->config->queued_conns;
+}
+
 
 int monitor_change_user_username(char * old_username, char * new_username){
     return user_manager_change_username(old_username, new_username);

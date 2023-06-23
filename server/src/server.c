@@ -73,6 +73,11 @@ int main(void) {
     int server_socket = -1;
     int monitor_socket = -1;
 
+    if(monitor_init(MAX_USERS, MAX_CONNS, QUEUED_CONNECTIONS) == -1) {
+        exit_value = EXIT_FAILURE;
+        goto exit;
+    }
+
     // inicio el user manager
     if (user_manager_create(USERS_PATH, MAILDROP_PATH) == -1) {
         switch (errno) {
@@ -175,10 +180,7 @@ int main(void) {
     log(LOGGER_INFO, "Max queued connections is %d", QUEUED_CONNECTIONS);
     log(LOGGER_INFO, "Attending a maximum of %d clients", BACKLOG);
 
-    if(monitor_init(MAX_USERS, MAX_CONNS, QUEUED_CONNECTIONS) == -1) {
-        exit_value = EXIT_FAILURE;
-        goto exit;
-    }
+
 
     selector_status = selector_register(selector, server_socket, &server_socket_handler, OP_READ, NULL);
     if(selector_status != SELECTOR_SUCCESS) {

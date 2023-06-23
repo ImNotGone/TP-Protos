@@ -28,6 +28,7 @@
 //   ENOMEM: Not enough memory to create the user manager
 //   EINVAL: Any of the parameters are NULL
 //   ENOENT: The maildrop parent directory does not exist
+//   EFBIG: The users file has more than max users
 // Notes:
 //   The user manager loads the users from the users file
 //   If the users file does not exist, no users are loaded
@@ -57,6 +58,7 @@ int user_manager_free(void);
 //   EEXIST: A user with the given username already exists
 //   ENOMEM: Not enough memory to create the user
 //   EIO: The users maildrop could not be created
+//   EFBIG: The users max has been reached
 // Notes:
 //   The user manager creates a maildrop for the user
 //   this maildrop is located in the maildrop parent directory / username

@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <monitor.h>
+#include <logger.h>
 #include <sys/stat.h>
 #include <user-manager.h>
 
@@ -32,6 +34,8 @@ static int delete_directory(const char *directory_path);
 // ============ User manager fields ============
 
 static user_list_t user_manager_user_list;
+
+static unsigned int user_manager_user_count;
 
 static char *user_manager_users_file_path;
 static char *user_manager_maildrop_parent_path;
@@ -129,6 +133,17 @@ int user_manager_create_user(const char *username, const char *password) {
         return -1;
     }
 
+    // Checks that the maximum user amount has not been reached
+    unsigned int max_users = monitor_get_max_users();
+    log(LOGGER_DEBUG, "Max users: %d", max_users);
+    log(LOGGER_DEBUG, "User count: %d", user_manager_user_count);
+    if (user_manager_user_count >= max_users) {
+        errno = EFBIG;
+        return -1;
+    }
+
+
+
     if (strlen(username) > MAX_USERNAME_LENGTH || strlen(password) > MAX_PASSWORD_LENGTH || strlen(username) == 0 ||
         strlen(password) == 0) {
         errno = EINVAL;
@@ -200,6 +215,8 @@ int user_manager_create_user(const char *username, const char *password) {
     new_user->next = user_manager_user_list;
     user_manager_user_list = new_user;
 
+    user_manager_user_count++;
+
     return 0;
 }
 
@@ -257,6 +274,8 @@ int user_manager_delete_user(const char *username) {
     free(current_user->username);
     free(current_user->password);
     free(current_user);
+
+    user_manager_user_count--;
 
     return 0;
 }
@@ -563,6 +582,14 @@ static int load_users(FILE *users_file) {
             return -1;
         }
 
+        unsigned int max_users = monitor_get_max_users();
+        if (user_manager_user_count >= max_users) {
+            free(username);
+            free(password);
+            errno = EFBIG;
+            return -1;
+        }
+
         // Create a new user node
         user_list_t new_user = malloc(sizeof(struct user_list_cdt));
         if (new_user == NULL) {
@@ -585,6 +612,10 @@ static int load_users(FILE *users_file) {
         }
 
         last_user = new_user;
+
+        log(LOGGER_DEBUG, "Loaded user %s", username);
+        user_manager_user_count++;
+        log(LOGGER_DEBUG, "User count: %d", user_manager_user_count);
     }
 
     last_user->next = NULL;

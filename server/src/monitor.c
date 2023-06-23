@@ -39,7 +39,6 @@ typedef metricsCDT * metrics_t;
 typedef struct configCDT{
     unsigned max_users;
     unsigned max_conns;
-    unsigned queued_conns;
 }configCDT;
 
 typedef configCDT * config_t;
@@ -57,8 +56,8 @@ static monitor_t monitor = NULL;
 
 // static char * copy_and_concat(char * dir_ini, size_t pos, const char * source, size_t * dim);
 
-int monitor_init(unsigned max_users, unsigned max_conns, unsigned queued_conns){
-    if(max_users == 0 || max_conns == 0 || queued_conns == 0){
+int monitor_init(unsigned max_users, unsigned max_conns){
+    if(max_users == 0 || max_conns == 0){
         errno = EINVAL;
         return -1;
     }
@@ -91,7 +90,6 @@ int monitor_init(unsigned max_users, unsigned max_conns, unsigned queued_conns){
 
     config->max_users=max_users;
     config->max_conns=max_conns;
-    config->queued_conns=queued_conns;
 
     monitor->metrics=metrics;
     monitor->config=config;
@@ -192,12 +190,6 @@ int monitor_set_max_conns(unsigned val){
     return 0;
 }
 
-int monitor_set_queued_conns(unsigned val) {
-    NULL_CHECK
-    monitor->config->queued_conns=val;
-    return 0;
-}
-
 int monitor_get_max_users(void) {
     NULL_CHECK
     return monitor->config->max_users;
@@ -207,12 +199,6 @@ int monitor_get_max_conns(void) {
     NULL_CHECK
     return monitor->config->max_conns;
 }
-
-int monitor_get_queued_conns(void) {
-    NULL_CHECK
-    return monitor->config->queued_conns;
-}
-
 
 int monitor_change_user_username(char * old_username, char * new_username){
     return user_manager_change_username(old_username, new_username);

@@ -358,14 +358,6 @@ static void handle_maxconns(struct selector_key *key, char *arg1, int arg1_len, 
     monitor_set_max_conns(value);
 }
 
-static void handle_maxqueue(struct selector_key *key, char *arg1, int arg1_len, char *unused1, int unused2) {
-    log(LOGGER_DEBUG, "%s", "Handling set queued connections command");
-
-    int value = handle_setter(key, arg1, arg1_len, unused1, unused2);
-
-    monitor_set_queued_conns(value);
-}
-
 static void error_handler(struct selector_key *key, char *unused1, int unused2, char *unused3, int unused4) {
     monitor_client_t * client_data = (monitor_client_t *) key->data;
 
@@ -388,7 +380,6 @@ static monitor_command_t monitor_commands[] = {
     {.name = "LOGS", .command_handler = handle_logs},
     {.name = "MAXUSERS", .command_handler = handle_maxusers},
     {.name = "MAXCONNS", .command_handler = handle_maxconns},
-    {.name = "MAXQUEUE", .command_handler = handle_maxqueue}
 };
 
 static monitor_command_t unknown_command = {.name = "ERR", .command_handler = error_handler};

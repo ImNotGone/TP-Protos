@@ -73,7 +73,7 @@ int main(void) {
     int server_socket = -1;
     int monitor_socket = -1;
 
-    if(monitor_init(MAX_USERS, MAX_CONNS, QUEUED_CONNECTIONS) == -1) {
+    if(monitor_init(MAX_USERS, MAX_CONNS) == -1) {
         exit_value = EXIT_FAILURE;
         goto exit;
     }

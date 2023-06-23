@@ -4,7 +4,7 @@
 #include <time.h>
 #include <sys/types.h>
 
-int monitor_init(unsigned max_users, unsigned max_conns, unsigned queued_conns);
+int monitor_init(unsigned max_users, unsigned max_conns);
 
 int monitor_add_log(char * username);
 int monitor_add_user(char * username, char * password);
@@ -13,11 +13,9 @@ int monitor_add_bytes(ssize_t bytes_sent);
 
 int monitor_set_max_users(unsigned val);
 int monitor_set_max_conns(unsigned val);
-int monitor_set_queued_conns(unsigned val);
 
 int monitor_get_max_users(void);
 int monitor_get_max_conns(void);
-int monitor_get_queued_conns(void);
 
 char ** monitor_get_usernames(void);
 ssize_t monitor_get_bytes_transf(void);

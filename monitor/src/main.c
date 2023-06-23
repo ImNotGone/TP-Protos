@@ -9,11 +9,15 @@
 #define RESPONSE_SIZE 40
 
 int main(int argc, char **argv) {
-    if (argc > MAX_WORDS + 2)
+    if (argc > MAX_WORDS + 2) {
         printf("Too many arguments\n");
+        exit(EXIT_FAILURE);
+    }
 
-    if (argc < TOKEN_AND_CMD + 2)
+    if (argc < TOKEN_AND_CMD + 2) {
         printf("Too few arguments\n");
+        exit(EXIT_FAILURE);
+    }
 
     printf("Connecting to %s:%s\n", argv[1], PORT_MONITOR);
 
@@ -21,7 +25,7 @@ int main(int argc, char **argv) {
 
     if (socket < 0) {
         fprintf(stderr, "Failed setting up socket: %d", socket);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     char buff[BUFFER_SIZE] = {0};
@@ -29,9 +33,11 @@ int main(int argc, char **argv) {
     monitor_command *command = NULL;
     command = get_user_command(argv + 2);
 
+    int exit_value = EXIT_SUCCESS;
     if (command == NULL) {
         fprintf(stderr, "Invalid command\n");
-        exit(1);
+        exit_value = EXIT_FAILURE;
+        goto exit;
     }
 
     bool error = false;
@@ -75,16 +81,18 @@ int main(int argc, char **argv) {
             break;
     }
 
-    if (!error) {
-        send(socket, buff, BUFFER_SIZE, 0);
-        if (monitor_response_handler(socket, IS_MULTILINE(command->instruction)) == -1) {
-            fprintf(stderr, "Server error\n");
-            exit(1);
-        }
-    } else {
+    if (error) {
         fprintf(stderr, "Unknown command\n");
+        exit_value = EXIT_FAILURE;
+        goto exit;
     }
-    free(command);
 
-    return 0;
+    send(socket, buff, BUFFER_SIZE, 0);
+    if (monitor_response_handler(socket, IS_MULTILINE(command->instruction)) == -1) {
+        fprintf(stderr, "Server error\n");
+        exit_value = EXIT_FAILURE;
+    }
+exit:
+    free(command);
+    return exit_value;
 }

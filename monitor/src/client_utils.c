@@ -12,7 +12,7 @@ int monitor_response_handler(int socket, bool multiline_response) {
     char response[BUFFER_SIZE + 1] = {0};
     int bytes_read = 0;
 
-    bytes_read = send(socket, response, BUFFER_SIZE, 0);
+    bytes_read = read(socket, response, BUFFER_SIZE);
     if(bytes_read==EOF) {
         return -1;
     }

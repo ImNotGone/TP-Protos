@@ -13,20 +13,16 @@ int main(int argc, char **argv) {
     if (argc < TOKEN_AND_CMD + 2)
         printf("Too few arguments\n");
 
+    printf("Connecting to %s:%s\n", argv[1], PORT_MONITOR);
+
     int socket = client_socket(argv[1], PORT_MONITOR);
+
     if (socket < 0) {
         fprintf(stderr, "Failed setting up socket: %d", socket);
         exit(1);
     }
 
     FILE *server = fdopen(socket, "r+");
-
-    fprintf(server, "%s\r\n", argv[1]);
-    fflush(server);
-
-    char response[40] = {0};
-    fgets(response, 40, server);
-
 
     monitor_command *command = NULL;
     command = get_user_command(argv + 2);
@@ -38,7 +34,7 @@ int main(int argc, char **argv) {
 
     bool error = false;
     fprintf(server, "%s ", command->auth_token);
-    
+
     switch (command->instruction) {
         case ADD_USER:
             fprintf(server, "ADDUSER %s %s\r\n", command->args[0], command->args[1]);

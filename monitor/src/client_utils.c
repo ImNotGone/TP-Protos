@@ -43,7 +43,6 @@ int client_socket(const char *host, const char *port){
     addr_criteria.ai_protocol = IPPROTO_TCP;
     addr_criteria.ai_flags = AI_NUMERICSERV | AI_V4MAPPED;
 
-
     struct addrinfo *server_addr;
     int rtnVal = getaddrinfo(host, port, &addr_criteria, &server_addr);
     if (rtnVal != 0)

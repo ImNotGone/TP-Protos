@@ -79,7 +79,6 @@ monitor_command *get_user_command(char ** user_input){
 
     cmd->auth_token = parsed_words[0];
     cmd->instruction = get_instruction(parsed_words[1]);
-    printf("%s\n", parsed_words[1]);
     if(cmd->instruction == ERROR)
         return NULL;
 

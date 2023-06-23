@@ -7,12 +7,12 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-int monitor_response_handler(FILE * monitor_fd, bool multiline_response){
+int monitor_response_handler(int socket, bool multiline_response){
 
     char response[BUFFER_SIZE + 1] = {0};
     int bytes_read = 0;
 
-    bytes_read = read(fileno(monitor_fd), response, BUFFER_SIZE);
+    bytes_read = send(socket, response, BUFFER_SIZE, 0);
     if(bytes_read==EOF){
         return -1;
     }

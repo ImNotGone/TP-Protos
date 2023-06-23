@@ -1,13 +1,12 @@
 #include <monitor.h>
+#include <string.h>
+#include <time.h>
 #include <logger.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <user-manager.h>
 
 #define BLOCK 82
-
-#define USER_STRING "User: "
-#define DATE_STRING "Date and time: "
 
 #define NULL_CHECK { \
     if(monitor == NULL){     \
@@ -56,7 +55,7 @@ typedef struct monitorCDT * monitor_t;
 
 static monitor_t monitor = NULL;
 
-static char * copy_and_concat(char * dir_ini, size_t pos, const char * source, size_t * dim);
+// static char * copy_and_concat(char * dir_ini, size_t pos, const char * source, size_t * dim);
 
 int monitor_init(unsigned max_users, unsigned max_conns, unsigned queued_conns){
     if(max_users == 0 || max_conns == 0 || queued_conns == 0){
@@ -115,9 +114,20 @@ int monitor_add_log(char * username){
         return -1;
     }
 
-    new_node->username = username;
+    char * username_copy = malloc(strlen(username) + 1);
+    if(username_copy == NULL){
+        free(new_node);
+        errno=ENOMEM;
+        return -1;
+    }
+
+    strcpy(username_copy, username);
+
+    new_node->username = username_copy;
     new_node->date_hour = time(NULL);
     new_node->next = NULL;
+
+    log(LOGGER_DEBUG, "New log: %s", username);
 
     if(monitor->first_log == NULL){
         monitor->first_log  = new_node;
@@ -203,34 +213,69 @@ char ** monitor_get_usernames(void){
     return user_manager_get_usernames();
 }
 
-char * get_logs(void){
-    if(monitor == NULL){
+char * monitor_get_logs(void){
+    if(monitor == NULL || monitor->first_log == NULL) {
         return NULL;
     }
 
     size_t dim = 0;
-    char * dir_ini = NULL;
+    size_t inserted = 0;
+    char * dir_ini = malloc(BLOCK * sizeof(char));
 
-    for (logs_t aux = monitor->first_log; aux != NULL; aux = aux->next){
-        dir_ini = copy_and_concat(dir_ini, dim, USER_STRING, &dim);
-        NULL_CHECK_PARAMETER(dir_ini)
-
-        dir_ini = copy_and_concat(dir_ini, dim, aux->username, &dim);
-        NULL_CHECK_PARAMETER(dir_ini)
-
-        dir_ini = copy_and_concat(dir_ini, dim, "\t", &dim);
-        NULL_CHECK_PARAMETER(dir_ini)
-
-        dir_ini = copy_and_concat(dir_ini, dim, DATE_STRING, &dim);
-        NULL_CHECK_PARAMETER(dir_ini)
-
-        dir_ini = copy_and_concat(dir_ini, dim, ctime(&(aux->date_hour)), &dim);
-        NULL_CHECK_PARAMETER(dir_ini)
-
-        dir_ini = copy_and_concat(dir_ini, dim, "\n", &dim);
-        NULL_CHECK_PARAMETER(dir_ini)
+    if(dir_ini == NULL){
+        errno=ENOMEM;
+        return NULL;
     }
 
+    logs_t aux = monitor->first_log;
+
+    while (aux != NULL) {
+        size_t username_len = strlen(aux->username);
+        if(inserted + username_len + 2 > dim){
+            dir_ini = realloc(dir_ini, (dim + username_len + 2 + BLOCK) * sizeof(char));
+            if(dir_ini == NULL){
+                errno=ENOMEM;
+                return NULL;
+            }
+            dim += username_len + 1 + BLOCK;
+        }
+
+        // Copy username
+        strcpy(dir_ini + inserted, aux->username);
+        inserted += username_len;
+        strcpy(dir_ini + inserted, " ");
+        inserted++;
+
+
+        // Get time info
+        struct tm * timeinfo = localtime(&aux->date_hour);
+        char buffer[20];
+        strftime(buffer, 20, "%Y-%m-%d %H:%M:%S", timeinfo);
+
+        // Check time fits
+        if(inserted + 20 + 3 > dim){
+            dir_ini = realloc(dir_ini, (dim + 20 + 3 + BLOCK) * sizeof(char));
+            if(dir_ini == NULL){
+                errno=ENOMEM;
+                return NULL;
+            }
+            dim += 20 + 1 + BLOCK;
+        }
+
+        // Copy time
+        strcpy(dir_ini + inserted, buffer);
+        inserted += strlen(buffer);
+        strcpy(dir_ini + inserted, "\r\n");
+        inserted += 2;
+
+        aux = aux->next;
+    }
+
+    if (inserted == 0){
+        free(dir_ini);
+        return NULL;
+    }
+     
     return dir_ini;
 }
 
@@ -249,26 +294,26 @@ int monitor_destroy(void) {
     return 0;
 }
 
-static char * copy_and_concat(char * dir_ini, size_t pos, const char * source, size_t * dim) {
-    int i;
-    for(i = 0; source[i] != 0; i++) {
-        if(i % BLOCK == 0){
-            dir_ini = realloc(dir_ini, (pos+i+BLOCK)* sizeof(char));
-            if(dir_ini == NULL){
-                errno= ENOMEM;
-                *dim = 0;
-                return NULL;
-            }
-        }
-        dir_ini[pos+i] = source[i];
-    }
-    dir_ini = realloc(dir_ini, (pos+i+1)*sizeof(char));
-    if(dir_ini == NULL){
-        errno= ENOMEM;
-        *dim = 0;
-        return NULL;
-    }
-    dir_ini[pos+i] = '\0';
-    *dim = pos+i;
-    return dir_ini;
-}
+// static char * copy_and_concat(char * dir_ini, size_t pos, const char * source, size_t * dim) {
+//     int i;
+//     for(i = 0; source[i] != 0; i++) {
+//         if(i % BLOCK == 0){
+//             dir_ini = realloc(dir_ini, (pos+i+BLOCK)* sizeof(char));
+//             if(dir_ini == NULL){
+//                 errno= ENOMEM;
+//                 *dim = 0;
+//                 return NULL;
+//             }
+//         }
+//         dir_ini[pos+i] = source[i];
+//     }
+//     dir_ini = realloc(dir_ini, (pos+i+1)*sizeof(char));
+//     if(dir_ini == NULL){
+//         errno= ENOMEM;
+//         *dim = 0;
+//         return NULL;
+//     }
+//     dir_ini[pos+i] = '\0';
+//     *dim = pos+i;
+//     return dir_ini;
+// }

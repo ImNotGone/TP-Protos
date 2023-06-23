@@ -267,6 +267,53 @@ static void handle_metrics(struct selector_key *key, char *unused1, int unused2,
 }
 
 static void handle_logs(struct selector_key *key, char *unused1, int unused2, char *unused3, int unused4) {
+
+    monitor_client_t * client_data = (monitor_client_t *) key->data;
+    client_data->response_index = 0;
+    client_data->response_is_allocated = false;
+
+    log(LOGGER_DEBUG, "%s", "Handling logs command");
+
+    if (unused1 != NULL || unused2 != 0 || unused3 != NULL || unused4 != 0) {
+        log(LOGGER_ERROR, "%s", "Invalid arguments for logs command");
+
+        client_data->response = "ERR\r\n";
+        write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
+        return;
+    }
+
+    char *logs = monitor_get_logs();
+
+    if (logs == NULL) {
+        log(LOGGER_ERROR, "%s", "Error getting logs");
+
+        client_data->response = "ERR\r\n";
+        write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
+        return;
+    }
+
+    char* response = malloc(strlen(logs) + strlen("OK\r\n.\r\n") + 1);
+
+    if (response == NULL) {
+        log(LOGGER_ERROR, "%s", "Error allocating memory for response");
+
+        free(logs);
+
+        client_data->response = "ERR\r\n";
+        write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
+        return;
+    }
+
+    strcpy(response, "OK\r\n");
+    strcat(response, logs);
+    strcat(response, ".\r\n");
+
+    free(logs);
+
+    client_data->response = response;
+    client_data->response_is_allocated = true;
+
+    write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
 }
 
 static void handle_maxusers(struct selector_key *key, char *arg1, int arg1_len, char *unused1, int unused2) {

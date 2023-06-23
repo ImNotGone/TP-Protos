@@ -18,7 +18,7 @@ char ** monitor_get_usernames(void);
 ssize_t monitor_get_bytes_transf(void);
 ssize_t monitor_get_current_connections(void);
 ssize_t monitor_get_historical_connections(void);
-char * get_logs(void);
+char * monitor_get_logs(void);
 
 void monitor_add_connection(void);
 void monitor_remove_connection(void);

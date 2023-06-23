@@ -281,6 +281,7 @@ char * monitor_get_logs(void){
 
 static void freeList(logs_t first) {
     if(first == NULL) return;
+    free(first->username);
     freeList(first->next);
     free(first);
 }

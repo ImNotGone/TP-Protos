@@ -45,6 +45,9 @@ states_t transaction_write(struct selector_key *key) {
 static states_t handle_stat(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4) {
     client_t * client_data = CLIENT_DATA(key);
     client_data->response_index = 0;
+
+    client_data->writing_from_file = false;
+
     free_allocated_response(client_data);
 
     int message_count, message_size;
@@ -76,6 +79,9 @@ static states_t handle_stat(struct selector_key * key, char *unused1, int unused
 static states_t handle_list(struct selector_key * key, char *message_number, int unused1, char *unused2, int unused3) {
     client_t * client_data = CLIENT_DATA(key);
     client_data->response_index = 0;
+
+    client_data->writing_from_file = false;
+
     free_allocated_response(client_data);
 
     // TODO: Porque cuando no hay argumentos todos los argumentos son el comando?
@@ -153,6 +159,9 @@ static states_t handle_retr(struct selector_key * key, char *message_number, int
                             int unused4) {
     client_t * client_data = CLIENT_DATA(key);
     client_data->response_index = 0;
+
+    client_data->writing_from_file = false;
+
     free_allocated_response(client_data);
 
     int message_number_int = atoi(message_number);
@@ -185,92 +194,21 @@ static states_t handle_retr(struct selector_key * key, char *message_number, int
         return TRANSACTION;
     }
 
-    // Estimated because byte-stuffing may increase the size and we want to reduce
-    // the number of reallocs
-    int estimated_response_size = strlen(RESPONSE_RETR_SUCCESS) + strlen(DOT_CRLF) + message_size + 1;
+    client_data->response = RESPONSE_RETR_SUCCESS;
+    client_data->writing_from_file = true;
+    client_data->message_file = message_file;
 
-    char *response = malloc(estimated_response_size);
-
-    if (response == NULL) {
-        log(LOGGER_ERROR, "%s", "Error getting message data list: not enough memory");
-
-        pclose(message_file);
-
-        client_data->response = RESPONSE_RETR_ERROR;
-        states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
-        return TRANSACTION;
-    }
-
-    sprintf(response, "%s", RESPONSE_RETR_SUCCESS);
-
-    // Read the file and write it to the response until EOF
-    char buffer[BUFFER_SIZE];
-    int bytes_read;
-    bool reallocated = false;
-    int dot_crlf_length = strlen(DOT_CRLF);
-    int response_index = strlen(RESPONSE_RETR_SUCCESS);
-
-    while ((bytes_read = fread(buffer, 1, BUFFER_SIZE, message_file)) > 0) {
-
-        if (response_index + bytes_read + dot_crlf_length >= estimated_response_size) {
-            estimated_response_size += BUFFER_SIZE;
-            response = realloc(response, estimated_response_size);
-
-            if (response == NULL) {
-                log(LOGGER_ERROR, "%s", "Error getting message data list: not enough memory");
-
-                pclose(message_file);
-
-                client_data->response = RESPONSE_RETR_ERROR;
-                states_common_response_write(&client_data->buffer_out, client_data->response,
-                                             &client_data->response_index);
-                return TRANSACTION;
-            }
-
-            reallocated = true;
-        }
-
-        memcpy(response + response_index, buffer, bytes_read);
-        response_index += bytes_read;
-    }
-
-    if (ferror(message_file)) {
-        pclose(message_file);
-        free(response);
-
-        client_data->response = RESPONSE_RETR_ERROR;
-        states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
-        return TRANSACTION;
-    }
-
-    pclose(message_file);
-
-    // Append the end of the response
-    sprintf(response + response_index, "%s", DOT_CRLF);
-
-    // Realloc to the exact size if needed
-    if (reallocated) {
-        response = realloc(response, response_index + dot_crlf_length + 1);
-
-        if (response == NULL) {
-            log(LOGGER_ERROR, "%s", "Error getting message data list: not enough memory");
-
-            client_data->response = RESPONSE_RETR_ERROR;
-            states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
-            return TRANSACTION;
-        }
-    }
-
-    client_data->response = response;
-    client_data->response_is_allocated = true;
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
-
+    
     return TRANSACTION;
 }
 
 static states_t handle_dele(struct selector_key * key, char *message_number, int unused1, char *unused2, int unused3) {
     client_t * client_data = CLIENT_DATA(key);
     client_data->response_index = 0;
+
+    client_data->writing_from_file = false;
+
     free_allocated_response(client_data);
 
     int message_number_int = atoi(message_number);
@@ -311,6 +249,9 @@ static states_t handle_dele(struct selector_key * key, char *message_number, int
 static states_t handle_noop(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4) {
     client_t * client_data = CLIENT_DATA(key);
     client_data->response_index = 0;
+
+    client_data->writing_from_file = false;
+
     free_allocated_response(client_data);
     client_data->response = RESPONSE_TRANSACTION_NOOP;
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
@@ -321,6 +262,9 @@ static states_t handle_rset(struct selector_key * key, char *unused1, int unused
     client_t * client_data = CLIENT_DATA(key);
 
     client_data->response_index = 0;
+
+    client_data->writing_from_file = false;
+
     free_allocated_response(client_data);
 
     client_data->response = RESPONSE_TRANSACTION_RSET;
@@ -344,6 +288,9 @@ static states_t handle_rset(struct selector_key * key, char *unused1, int unused
 static states_t handle_capa(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4) {
     client_t * client_data = CLIENT_DATA(key);
     client_data->response_index = 0;
+
+    client_data->writing_from_file = false;
+
     free_allocated_response(client_data);
     client_data->response = RESPONSE_TRANSACTION_CAPA;
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
@@ -352,6 +299,9 @@ static states_t handle_capa(struct selector_key * key, char *unused1, int unused
 
 static states_t handle_quit(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4) {
     client_t * client_data = CLIENT_DATA(key);
+
+    client_data->writing_from_file = false;
+
     // Go to update state for it to be handled there
     free_allocated_response(client_data);
     return UPDATE;

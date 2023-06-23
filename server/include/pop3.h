@@ -40,8 +40,9 @@ typedef struct client {
     struct buffer buffer_out;
     uint8_t buffer_out_data[BUFFSIZE];
 
-    struct buffer buffer_fd;
-    uint8_t buffer_fd_data[BUFFSIZE];
+    // For retrieving messages
+    FILE *message_file;
+    bool writing_from_file;
 
     message_manager_t message_manager;
 } client_t;

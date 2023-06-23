@@ -13,6 +13,25 @@ inline void states_common_response_write(struct buffer * buffer, char * response
     }
 }
 
+inline int states_common_file_write(struct buffer * buffer, FILE * file, size_t * dim) {
+    while (buffer_can_write(buffer)) {
+        char c = fgetc(file);
+        
+        // si hubo un error al leer el archivo, devuelvo -1
+        if (ferror(file)) {
+            return -1;
+        }
+
+        if (c == EOF) {
+            break;
+        }
+        buffer_write(buffer, c);
+        (*dim)++;
+    }
+
+    return 0;
+}
+
 static states_t unknown_command_handler(struct selector_key * key, char * unused1, int unused2, char * unused3, int unused4) {
     client_t * client_data = CLIENT_DATA(key);
     client_data->response_index = 0;
@@ -103,6 +122,39 @@ states_t states_common_write(struct selector_key * key, char * state, command_t 
     // hasta que termine de mandar la linea
     if(buffer_can_read(&client_data->buffer_out) || client_data->response[client_data->response_index] != '\0') {
         states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+        return current_state;
+    }
+
+    // si ya termine de mandar la response, veo si tengo que mandar el archivo
+    if (client_data->writing_from_file && !feof(client_data->message_file)) {
+        bool error = states_common_file_write(&client_data->buffer_out, client_data->message_file, &client_data->response_index) == -1;
+
+        if (error) {
+            log(LOGGER_ERROR, "Error reading file on state:%s to sd:%d", state, key->fd);
+            return ERROR;
+        }
+
+        if (feof(client_data->message_file)) {
+            pclose(client_data->message_file);
+            client_data->writing_from_file = false;
+
+            // Si ya termine de mandar el archivo, mando el . CLRF
+            if (buffer_can_read(&client_data->buffer_out)) {
+
+                // No deberia pasar nunca, pero por las dudas
+                if (client_data->response_is_allocated) {
+                    free(client_data->response);
+                    client_data->response_is_allocated = false;
+                }
+
+                client_data->response = DOT_CRLF;
+                client_data->response_index = 0;
+
+                states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
+                return current_state;
+            }
+        }
+
         return current_state;
     }
 

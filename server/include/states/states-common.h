@@ -6,6 +6,7 @@
 #include <commands.h>
 
 void states_common_response_write(struct buffer * buffer, char * response, size_t * dim);
+int states_common_file_write(struct buffer * buffer, FILE * file, size_t * dim);
 states_t states_common_read(struct selector_key * key, char * state, command_t * commands, int cant_commands);
 states_t states_common_write(struct selector_key * key, char * state, command_t * commands, int cant_commands);
 

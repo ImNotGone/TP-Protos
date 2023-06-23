@@ -250,7 +250,7 @@ static void handle_metrics(struct selector_key *key, char *unused1, int unused2,
     const char *crlf = "\r\n";
     const char *dotcrlf = ".\r\n";
 
-    int bytes_needed = strlen(ok) + strlen(crlf) + current_connections_len + strlen(crlf) + historical_connections_len + strlen(crlf) + bytes_transferred_len + strlen(dotcrlf) + 1;
+    int bytes_needed = strlen(ok) + strlen(crlf) + current_connections_len + strlen(crlf) + historical_connections_len + strlen(crlf) + bytes_transferred_len + strlen(crlf) + strlen(dotcrlf) + 1;
 
     char *response = malloc(bytes_needed);
     if (response == NULL) {
@@ -261,7 +261,7 @@ static void handle_metrics(struct selector_key *key, char *unused1, int unused2,
         return;
     }
 
-    sprintf(response, "%s%s%zd%s%zd%s%zd%s", ok, crlf, current_connections, crlf, historical_connections, crlf, bytes_transferred, dotcrlf);
+    sprintf(response, "%s%s%zd%s%zd%s%zd%s%s", ok, crlf, current_connections, crlf, historical_connections, crlf, bytes_transferred, crlf, dotcrlf);
 
     client_data->response = response;
     client_data->response_is_allocated = true;

@@ -371,17 +371,34 @@ int user_manager_change_username(char* old_username, char* new_username){
         return -1;
     }
 
-    free(user->username);
-
-    user->username = malloc(sizeof(char) * (strlen(new_username) + 1));
-    if(user->username == NULL){
+    char *allocated_new_username = malloc(sizeof(char) * (strlen(new_username) + 1));
+    if(allocated_new_username == NULL){
         errno = ENOMEM;
         return -1;
     }
 
-    strcpy(user->username, new_username);
+    int maildrop_path_length = strlen(user_manager_maildrop_parent_path) + strlen(old_username) + 1;
+    char maildrop_path[maildrop_path_length];
 
-    //TODO: Make changes effective in the maildrop
+    strcpy(maildrop_path, user_manager_maildrop_parent_path);
+    strcat(maildrop_path, old_username);
+
+    int new_maildrop_path_length = strlen(user_manager_maildrop_parent_path) + strlen(new_username) + 1;
+    char new_maildrop_path[new_maildrop_path_length];
+
+    strcpy(new_maildrop_path, user_manager_maildrop_parent_path);
+    strcat(new_maildrop_path, new_username);
+
+    if(rename(maildrop_path, new_maildrop_path) == -1){
+        errno = EIO;
+
+        free(allocated_new_username);
+
+        return -1;
+    }
+
+    free(user->username);
+    user->username = allocated_new_username;
 
     return 0;
 }

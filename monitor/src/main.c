@@ -9,13 +9,16 @@
 #define RESPONSE_SIZE 40
 
 int main(int argc, char **argv) {
-    if (argc > MAX_WORDS + 1)
+    if (argc > MAX_WORDS + 2)
         printf("Too many arguments\n");
 
-    if (argc < HOST_TOKEN_AND_CMD + 1)
+    if (argc < TOKEN_AND_CMD + 2)
         printf("Too few arguments\n");
 
+    printf("Connecting to %s:%s\n", argv[1], PORT_MONITOR);
+
     int socket = client_socket(argv[1], PORT_MONITOR);
+
     if (socket < 0) {
         fprintf(stderr, "Failed setting up socket: %d", socket);
         exit(1);
@@ -23,15 +26,6 @@ int main(int argc, char **argv) {
 
     char buff[BUFFER_SIZE] = {0};
     char * aux = buff;
-
-    /*
-    ssize_t bytes_sent = send(socket, buff, BUFFER_SIZE, 0);
-    if(bytes_sent < 0) {
-        fprintf(stderr, "Failed sending message: %ld", bytes_sent);
-        exit(1);
-    }
-    */
-
     monitor_command *command = NULL;
     command = get_user_command(argv + 2);
 
@@ -79,7 +73,6 @@ int main(int argc, char **argv) {
         default:
             error = true;
             break;
-
     }
 
     if (!error) {

@@ -1,13 +1,13 @@
 #ifndef MONITOR_MONITOR_PARSER_H
 #define MONITOR_MONITOR_PARSER_H
 
-#define HOST_TOKEN_AND_CMD 3
+#define TOKEN_AND_CMD 2
 
 #define MAX_ARGS 2
 #define MAX_CMD_LENGTH 40
 
 // 1 host + 1 auth_token + 1 command + args
-#define MAX_WORDS (HOST_TOKEN_AND_CMD + MAX_ARGS)
+#define MAX_WORDS (TOKEN_AND_CMD + MAX_ARGS)
 
 #define IS_MULTILINE(monitor_instructions) ( (monitor_instructions) == LIST || (monitor_instructions) == LOGS)
 

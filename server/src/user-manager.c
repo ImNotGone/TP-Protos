@@ -397,6 +397,8 @@ int user_manager_change_username(char* old_username, char* new_username){
         return -1;
     }
 
+    strcpy(allocated_new_username, new_username);
+
     free(user->username);
     user->username = allocated_new_username;
 

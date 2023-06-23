@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <stdio.h>
+
+#define ONE_ARG 3
+#define TWO_ARGS 4
 
 char * str_toupper(char * str);
 
@@ -15,12 +17,25 @@ void set_args(monitor_command * cmd, char ** args){
     }
 }
 
-monitor_instructions get_instruction(const char * cmd){
+monitor_instructions get_no_arg(const char * cmd){
     if(cmd == NULL){
-        return -1;
+        return ERROR;
     }
-    if(strcmp(cmd, "-ADD_USER") == 0){
-        return ADD_USER;
+    if(strcmp(cmd, "-LIST") == 0){
+        return LIST;
+    }
+    if(strcmp(cmd, "-METRICS") == 0){
+        return METRICS;
+    }
+    if(strcmp(cmd, "-LOGS") == 0){
+        return LOGS;
+    }
+    return ERROR;
+}
+
+monitor_instructions get_one_arg(const char * cmd){
+    if(cmd == NULL){
+        return ERROR;
     }
     if(strcmp(cmd, "-DELETE_USER") == 0){
         return DELETE_USER;
@@ -28,23 +43,18 @@ monitor_instructions get_instruction(const char * cmd){
     if(strcmp(cmd, "-SET_MAX_USERS") == 0){
         return SET_MAX_USERS;
     }
-    if(strcmp(cmd, "-GET_MAX_USERS") == 0){
-        return GET_MAX_USERS;
-    }
     if(strcmp(cmd, "-SET_MAX_CONNS") == 0){
         return SET_MAX_CONNS;
     }
-    if(strcmp(cmd, "-GET_MAX_CONNS") == 0){
-        return GET_MAX_CONNS;
+    return ERROR;
+}
+
+monitor_instructions get_two_args(const char * cmd){
+    if(cmd == NULL){
+        return ERROR;
     }
-    if(strcmp(cmd, "-LIST") == 0){
-        return LIST;
-    }
-    if(strcmp(cmd, "-BYTES") == 0){
-        return BYTES;
-    }
-    if(strcmp(cmd, "-LOGS") == 0){
-        return LOGS;
+    if(strcmp(cmd, "-ADD_USER") == 0){
+        return ADD_USER;
     }
     if(strcmp(cmd, "-CHANGE_USERNAME") == 0){
         return CHANGE_USERNAME;
@@ -52,10 +62,7 @@ monitor_instructions get_instruction(const char * cmd){
     if(strcmp(cmd, "-CHANGE_PASSWORD") == 0){
         return CHANGE_PASSWORD;
     }
-    if(strcmp(cmd, "-HELP") == 0){
-        return HELP;
-    }
-    return -1;
+    return ERROR;
 }
 
 monitor_command *get_user_command(char ** user_input){
@@ -64,7 +71,6 @@ monitor_command *get_user_command(char ** user_input){
 
     char * parsed_words[MAX_CMD_LENGTH];
 
-    monitor_command *cmd = calloc(1, sizeof(monitor_command));
 
     int i;
     for (i = 0; user_input[i] != NULL ; i++) {
@@ -76,11 +82,25 @@ monitor_command *get_user_command(char ** user_input){
 
     // Command is case-insensitive
     str_toupper(parsed_words[1]);
-
+    monitor_command *cmd = calloc(1, sizeof(monitor_command));
     cmd->auth_token = parsed_words[0];
-    cmd->instruction = get_instruction(parsed_words[1]);
-    if(cmd->instruction == ERROR)
+
+    switch (i) {
+        case ONE_ARG:
+            cmd->instruction = get_one_arg(parsed_words[1]);
+            break;
+        case TWO_ARGS:
+            cmd->instruction = get_two_args(parsed_words[1]);
+            break;
+        default:
+            cmd->instruction = get_no_arg(parsed_words[1]);
+            break;
+    }
+
+    if(cmd->instruction == ERROR){
+        free(cmd);
         return NULL;
+    }
 
     set_args(cmd, parsed_words + TOKEN_AND_CMD);
 

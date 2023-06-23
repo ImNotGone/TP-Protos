@@ -84,6 +84,15 @@ void pop3_server_accept(struct selector_key* key) {
     socklen_t addr_len = sizeof(SAIN);
     int client_sd = accept(key->fd, (SA *)&client_addr, &addr_len);
 
+    log(LOGGER_DEBUG, "current connections: %zd", monitor_get_current_connections());
+    log(LOGGER_DEBUG, "max connections: %zd", monitor_get_max_conns());
+
+    if(monitor_get_max_conns() <= monitor_get_current_connections()) {
+        log(LOGGER_INFO, "%s", "client could not be added due to monitor beeing full");
+        close(client_sd);
+        return;
+    }
+
     if(client_sd < 0) {
         log(LOGGER_ERROR, "%s", "accept error, client sd was negative");
         return;

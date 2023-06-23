@@ -15,7 +15,7 @@ int monitor_set_max_users(unsigned val);
 int monitor_set_max_conns(unsigned val);
 
 int monitor_get_max_users(void);
-int monitor_get_max_conns(void);
+ssize_t monitor_get_max_conns(void);
 
 char ** monitor_get_usernames(void);
 ssize_t monitor_get_bytes_transf(void);

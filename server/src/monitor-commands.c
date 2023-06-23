@@ -112,9 +112,106 @@ static void handle_updatepass(struct selector_key *key, char *arg1, int arg1_len
 }
 
 static void handle_updatename(struct selector_key *key, char *arg1, int arg1_len, char *arg2, int arg2_len) {
+
+    monitor_client_t * client_data = (monitor_client_t *) key->data;
+    client_data->response_index = 0;
+    client_data->response_is_allocated = false;
+
+    log(LOGGER_DEBUG, "%s", "Handling updatename command");
+
+    if (arg1_len == 0 || arg2_len == 0) {
+        log(LOGGER_ERROR, "%s", "Invalid arguments for updatename command");
+
+        client_data->response = "ERR\r\n";
+        write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
+        return;
+    }
+
+    char username[arg1_len + 1];
+    char new_username[arg2_len + 1];
+
+    strncpy(username, arg1, arg1_len);
+    username[arg1_len] = '\0';
+
+    strncpy(new_username, arg2, arg2_len);
+    new_username[arg2_len] = '\0';
+
+    int result = monitor_change_user_username(username, new_username);
+    if (result == -1) {
+        client_data->response = "ERR\r\n";
+    } else {
+        client_data->response = "OK\r\n";
+    }
+
+    write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
+
 }
 
 static void handle_listusers(struct selector_key *key, char *unused1, int unused2, char *unused3, int unused4) {
+
+    monitor_client_t * client_data = (monitor_client_t *) key->data;
+    client_data->response_index = 0;
+    client_data->response_is_allocated = false;
+
+    if (unused1 != NULL || unused2 != 0 || unused3 != NULL || unused4 != 0) {
+        log(LOGGER_ERROR, "%s", "Invalid arguments for listusers command");
+
+        client_data->response = "ERR\r\n";
+        write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
+        return;
+    }
+
+    log(LOGGER_DEBUG, "%s", "Handling listusers command");
+
+    char ** users = monitor_get_usernames();
+
+    if (users == NULL) {
+        log(LOGGER_ERROR, "%s", "Error getting users");
+
+        client_data->response = "ERR\r\n";
+        write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
+        return;
+    }
+
+
+    const char *ok = "OK\r\n";
+    const char *dotcrlf = ".\r\n";
+
+    // Get bytes needed for response
+    int bytes_needed = 0;
+    for (int i = 0; users[i] != NULL; i++) {
+        bytes_needed += strlen(users[i]) + strlen("\r\n") + 1;
+    }
+
+    // Allocate response
+    char *response = malloc(bytes_needed + strlen(ok) + strlen(dotcrlf) + 1);
+    if (response == NULL) {
+        log(LOGGER_ERROR, "%s", "Error allocating memory for response");
+
+        free(users);
+
+        client_data->response = "ERR\r\n";
+        write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
+        return;
+    }
+
+    // Write response
+    strcpy(response, ok);
+
+    for (int i = 0; users[i] != NULL; i++) {
+        strcat(response, users[i]);
+        strcat(response, "\r\n");
+    }
+
+    strcat(response, dotcrlf);
+
+
+    client_data->response = response;
+    client_data->response_is_allocated = true;
+
+    free(users);
+
+    write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
 }
 
 static void handle_metrics(struct selector_key *key, char *unused1, int unused2, char *unused3, int unused4) {

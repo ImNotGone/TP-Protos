@@ -33,8 +33,6 @@ int parse_client_request(struct selector_key *key) {
     if (parsed_words[0] == NULL)
         return -1;
 
-    log(LOGGER_DEBUG, "token: %s", parsed_words[0]);
-
     char *token;
     while ((token = strtok_r(save_ptr, " ", &save_ptr)) != NULL) {
         log(LOGGER_DEBUG, "token: %s", token);

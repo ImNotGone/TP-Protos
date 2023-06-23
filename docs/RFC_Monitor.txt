@@ -229,25 +229,3 @@ Junio 2023                                                      [Pag. 3]
         C: auth_token MAXCONNS 0
         S: ERR
 
-
-    - MAXQUEUE: Configura la cantidad máxima de conexiones en espera
-      que puede tener el servidor. El comando recibe como argumento la
-      cantidad máxima de conexiones en espera, este argumento debe ser
-      mayor o igual que 1. El comando solamente devuelve un header de
-      respuesta.
-
-      Ejemplo:
-
-        C: auth_token MAXQUEUE 10
-        S: OK
-
-        C: auth_token MAXQUEUE 0
-        S: ERR
-        
-
-
-
-
-
-
-    

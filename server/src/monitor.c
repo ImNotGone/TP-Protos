@@ -195,7 +195,7 @@ int monitor_get_max_users(void) {
     return monitor->config->max_users;
 }
 
-int monitor_get_max_conns(void) {
+ssize_t monitor_get_max_conns(void) {
     NULL_CHECK
     return monitor->config->max_conns;
 }

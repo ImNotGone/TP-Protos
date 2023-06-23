@@ -2,6 +2,7 @@
 #include <string.h>
 #include <monitor.h>
 #include <logger.h>
+#include <stdio.h>
 
 static void write_response_in_buffer(struct buffer * buffer, char * response, size_t * dim) {
     while (buffer_can_write(buffer) && response[*dim] != '\0') {
@@ -162,7 +163,6 @@ static monitor_command_t unknown_command = {.name = "ERR", .command_handler = er
 static int monitor_commands_size = N(monitor_commands);
 
 monitor_command_t *get_monitor_command(char * command) {
-
     // Check if the command is valid
     for (int i = 0; i < monitor_commands_size; i++) {
         if (strncmp(command, monitor_commands[i].name, MONITOR_MAX_COMMAND_LEN) == 0) {

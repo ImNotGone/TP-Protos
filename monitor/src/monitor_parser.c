@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdio.h>
 
 char * str_toupper(char * str);
 
@@ -78,10 +79,11 @@ monitor_command *get_user_command(char ** user_input){
 
     cmd->auth_token = parsed_words[0];
     cmd->instruction = get_instruction(parsed_words[1]);
+    printf("%s\n", parsed_words[1]);
     if(cmd->instruction == ERROR)
         return NULL;
 
-    set_args(cmd, parsed_words + HOST_TOKEN_AND_CMD);
+    set_args(cmd, parsed_words + TOKEN_AND_CMD);
 
     return cmd;
 }

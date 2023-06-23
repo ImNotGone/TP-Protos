@@ -28,10 +28,7 @@ int parse_client_request(struct selector_key *key) {
     int index = 0;
     char *save_ptr = line;
 
-    log(LOGGER_DEBUG, "token: %s", parsed_words[0]);
-
     parsed_words[index++] = strtok_r(save_ptr, " ", &save_ptr);
-
 
     if (parsed_words[0] == NULL)
         return -1;

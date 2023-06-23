@@ -7,10 +7,10 @@
 #define PORT_MONITOR "8889"
 
 int main(int argc, char **argv) {
-    if (argc > MAX_WORDS + 1)
+    if (argc > MAX_WORDS + 2)
         printf("Too many arguments\n");
 
-    if (argc < HOST_TOKEN_AND_CMD + 1)
+    if (argc < TOKEN_AND_CMD + 2)
         printf("Too few arguments\n");
 
     int socket = client_socket(argv[1], PORT_MONITOR);
@@ -37,7 +37,8 @@ int main(int argc, char **argv) {
     }
 
     bool error = false;
-
+    fprintf(server, "%s ", command->auth_token);
+    
     switch (command->instruction) {
         case ADD_USER:
             fprintf(server, "ADDUSER %s %s\r\n", command->args[0], command->args[1]);
@@ -72,7 +73,6 @@ int main(int argc, char **argv) {
         default:
             error = true;
             break;
-
     }
 
     if (!error) {

@@ -4,7 +4,7 @@
 #define MAX_USERS   500
 #define MAX_CONNS   500
 #define K           1024
-#define BUFFSIZE    (1024*K)
+#define BUFFSIZE    (64*K)
 
 #define MAILDROP_PATH   "./server/data/maildrops/"
 #define USERS_PATH      "./server/data/users.txt"

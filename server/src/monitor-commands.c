@@ -347,6 +347,9 @@ static void handle_maxusers(struct selector_key *key, char *arg1, int arg1_len, 
 
     int value = handle_setter(key, arg1, arg1_len, unused1, unused2);
 
+    client_data->response = "OK\r\n";
+    write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
+
     monitor_set_max_users(value);
 }
 
@@ -354,6 +357,9 @@ static void handle_maxconns(struct selector_key *key, char *arg1, int arg1_len, 
     log(LOGGER_DEBUG, "%s", "Handling set max connections command");
 
     int value = handle_setter(key, arg1, arg1_len, unused1, unused2);
+
+    client_data->response = "OK\r\n";
+    write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
 
     monitor_set_max_conns(value);
 }

@@ -2,6 +2,7 @@
 #include <states/states-common.h>
 #include <logger.h>
 #include <commands.h>
+#include <stdlib.h>
 #include <sys/socket.h>
 #include <responses.h>
 #include <monitor.h>
@@ -16,7 +17,7 @@ inline void states_common_response_write(struct buffer * buffer, char * response
 inline int states_common_file_write(struct buffer * buffer, FILE * file, size_t * dim) {
     while (buffer_can_write(buffer)) {
         char c = fgetc(file);
-        
+
         // si hubo un error al leer el archivo, devuelvo -1
         if (ferror(file)) {
             return -1;
@@ -32,8 +33,17 @@ inline int states_common_file_write(struct buffer * buffer, FILE * file, size_t 
     return 0;
 }
 
+static void free_allocated_response(client_t * client_data){
+    if(client_data->response_is_allocated){
+        client_data->response_is_allocated=false;
+        free(client_data->response);
+        client_data->response=NULL;
+    }
+}
+
 static states_t unknown_command_handler(struct selector_key * key, char * unused1, int unused2, char * unused3, int unused4) {
     client_t * client_data = CLIENT_DATA(key);
+    free_allocated_response(client_data);
     client_data->response_index = 0;
     client_data->response = RESPONSE_UNKNOWN;
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
@@ -120,7 +130,7 @@ states_t states_common_write(struct selector_key * key, char * state, command_t 
 
     // Todavia me quedan cosas por procesar asi que me quedo en el state actual
     // hasta que termine de mandar la linea
-    if(buffer_can_read(&client_data->buffer_out) || client_data->response[client_data->response_index] != '\0') {
+    if(buffer_can_read(&client_data->buffer_out) || (!client_data->writing_from_file && client_data->response[client_data->response_index] != '\0')) {
         states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
         return current_state;
     }

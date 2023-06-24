@@ -358,6 +358,8 @@ static void handle_maxusers(struct selector_key *key, char *arg1, int arg1_len, 
 static void handle_maxconns(struct selector_key *key, char *arg1, int arg1_len, char *unused1, int unused2) {
     log(LOGGER_DEBUG, "%s", "Handling set max connections command");
 
+    monitor_client_t * client_data = (monitor_client_t *) key->data;
+
     int value = handle_setter(key, arg1, arg1_len, unused1, unused2);
 
     if (value > 0) {

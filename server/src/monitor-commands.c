@@ -325,7 +325,6 @@ static int handle_setter(struct selector_key *key, char *arg1, int arg1_len, cha
         log(LOGGER_ERROR, "%s", "Invalid arguments for setter command");
 
         client_data->response = "ERR\r\n";
-        write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
         return -1;
     }
 
@@ -335,9 +334,10 @@ static int handle_setter(struct selector_key *key, char *arg1, int arg1_len, cha
         log(LOGGER_ERROR, "%s", "Argument must be positive number");
 
         client_data->response = "ERR\r\n";
-        write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
         return -1;
     }
+
+    client_data->response = "OK\r\n";
 
     return value;
 }
@@ -347,10 +347,12 @@ static void handle_maxusers(struct selector_key *key, char *arg1, int arg1_len, 
 
     int value = handle_setter(key, arg1, arg1_len, unused1, unused2);
 
-    client_data->response = "OK\r\n";
-    write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
 
-    monitor_set_max_users(value);
+    if (value > 0) {
+        monitor_set_max_users(value);
+    }
+
+    write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
 }
 
 static void handle_maxconns(struct selector_key *key, char *arg1, int arg1_len, char *unused1, int unused2) {
@@ -358,10 +360,11 @@ static void handle_maxconns(struct selector_key *key, char *arg1, int arg1_len, 
 
     int value = handle_setter(key, arg1, arg1_len, unused1, unused2);
 
-    client_data->response = "OK\r\n";
-    write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
+    if (value > 0) {
+        monitor_set_max_conns(value);
+    }
 
-    monitor_set_max_conns(value);
+    write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
 }
 
 static void error_handler(struct selector_key *key, char *unused1, int unused2, char *unused3, int unused4) {

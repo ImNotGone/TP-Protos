@@ -200,8 +200,6 @@ int main(void) {
     }
 
 exit:
-    monitor_destroy();
-
     if(selector != NULL) {
         selector_destroy(selector);
     }
@@ -213,6 +211,8 @@ exit:
     if(server_socket >= 0) {
         close(server_socket);
     }
+
+    monitor_destroy();
     return exit_value;
 }
 

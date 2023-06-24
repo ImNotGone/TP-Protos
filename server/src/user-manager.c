@@ -142,8 +142,6 @@ int user_manager_create_user(const char *username, const char *password) {
         return -1;
     }
 
-
-
     if (strlen(username) > MAX_USERNAME_LENGTH || strlen(password) > MAX_PASSWORD_LENGTH || strlen(username) == 0 ||
         strlen(password) == 0) {
         errno = EINVAL;

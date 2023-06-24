@@ -41,8 +41,6 @@ void update_on_arrival(states_t state, struct selector_key *key) {
 
     client_data->response = RESPONSE_UPDATE_QUIT_SUCCESS;
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
-
-    return;
 }
 
 states_t update_write(struct selector_key *key) {

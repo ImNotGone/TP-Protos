@@ -14,12 +14,6 @@
     }\
 }
 
-#define NULL_CHECK_PARAMETER(param){\
-    if(param == NULL){\
-        return NULL;\
-    }\
-}
-
 typedef struct logsCDT{
     char * username;
     time_t date_hour;
@@ -53,8 +47,6 @@ typedef struct monitorCDT{
 typedef struct monitorCDT * monitor_t;
 
 static monitor_t monitor = NULL;
-
-// static char * copy_and_concat(char * dir_ini, size_t pos, const char * source, size_t * dim);
 
 int monitor_init(unsigned max_users, unsigned max_conns){
     if(max_users == 0 || max_conns == 0){
@@ -125,7 +117,7 @@ int monitor_add_log(char * username){
     new_node->date_hour = time(NULL);
     new_node->next = NULL;
 
-    log(LOGGER_DEBUG, "New log: %s", username);
+    log(LOGGER_DEBUG, "New log: %s", username)
 
     if(monitor->first_log == NULL){
         monitor->first_log  = new_node;
@@ -143,13 +135,13 @@ int monitor_add_log(char * username){
 void monitor_add_connection(void){
     monitor->metrics->current_conns++;
     monitor->metrics->historic_conns++;
-    log(LOGGER_DEBUG, "Current connections: %d", monitor->metrics->current_conns);
-    log(LOGGER_DEBUG, "Historic connections: %d", monitor->metrics->historic_conns);
+    log(LOGGER_DEBUG, "Current connections: %d", monitor->metrics->current_conns)
+    log(LOGGER_DEBUG, "Historic connections: %d", monitor->metrics->historic_conns)
 }
 
 void monitor_remove_connection(void){
     monitor->metrics->current_conns != 0 ? monitor->metrics->current_conns-- : 0;
-    log(LOGGER_DEBUG, "Current connections: %d", monitor->metrics->current_conns);
+    log(LOGGER_DEBUG, "Current connections: %d", monitor->metrics->current_conns)
 }
 
 ssize_t monitor_get_current_connections(void) {
@@ -180,7 +172,7 @@ int monitor_add_bytes(ssize_t bytes_sent){
 int monitor_set_max_users(unsigned val){
     NULL_CHECK
     monitor->config->max_users=val;
-    log(LOGGER_DEBUG, "Max users: %d", monitor->config->max_users);
+    log(LOGGER_DEBUG, "Max users: %d", monitor->config->max_users)
     return 0;
 }
 
@@ -303,27 +295,3 @@ int monitor_destroy(void) {
     free(monitor);
     return 0;
 }
-
-// static char * copy_and_concat(char * dir_ini, size_t pos, const char * source, size_t * dim) {
-//     int i;
-//     for(i = 0; source[i] != 0; i++) {
-//         if(i % BLOCK == 0){
-//             dir_ini = realloc(dir_ini, (pos+i+BLOCK)* sizeof(char));
-//             if(dir_ini == NULL){
-//                 errno= ENOMEM;
-//                 *dim = 0;
-//                 return NULL;
-//             }
-//         }
-//         dir_ini[pos+i] = source[i];
-//     }
-//     dir_ini = realloc(dir_ini, (pos+i+1)*sizeof(char));
-//     if(dir_ini == NULL){
-//         errno= ENOMEM;
-//         *dim = 0;
-//         return NULL;
-//     }
-//     dir_ini[pos+i] = '\0';
-//     *dim = pos+i;
-//     return dir_ini;
-// }

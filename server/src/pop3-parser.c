@@ -10,7 +10,7 @@ static void append_to_command(struct parser_event * ret, const uint8_t c) {
         ret->cmd = ret->line;
     }
     if (ret->cmd_len == MAX_COMMAND_LEN) {
-        log(LOGGER_ERROR, "parsing command, cmd_len reached max of %d", MAX_COMMAND_LEN);
+        log(LOGGER_ERROR, "parsing command, cmd_len reached max of %d", MAX_COMMAND_LEN)
         ret->has_errors = true;
         return;
     }
@@ -20,18 +20,17 @@ static void append_to_command(struct parser_event * ret, const uint8_t c) {
 
 static void append_to_arg(struct parser_event * ret, const uint8_t c) {
     if(ret->args_len[ret->argc] == MAX_ARG_LEN) {
-        log(LOGGER_ERROR, "parsing command, args_len for arg %d reached max of %d", ret->argc,  MAX_ARG_LEN);
+        log(LOGGER_ERROR, "parsing command, args_len for arg %d reached max of %d", ret->argc,  MAX_ARG_LEN)
         ret->has_errors = true;
         return;
     }
-    // TODO: revisar si los args son case sensitive
     ret->args[ret->argc][ret->args_len[ret->argc]++] = tolower(c);
     ret->line_len++;
 }
 
 static void increment_argc(struct parser_event * ret, const uint8_t c) {
     if(ret->argc == MAX_ARG_COUNT) {
-        log(LOGGER_ERROR, "parsing command, argc reached max of %d", MAX_ARG_COUNT);
+        log(LOGGER_ERROR, "parsing command, argc reached max of %d", MAX_ARG_COUNT)
         ret->has_errors = true;
         return;
     }
@@ -51,7 +50,6 @@ static void in_cr(struct parser_event * ret, const uint8_t c) {
 static void goto_first_arg(struct parser_event * ret, const uint8_t c) {
     ret->line[ret->line_len++] = '\0';
     ret->args[ret->argc] = &ret->line[ret->line_len];
-    return;
 }
 
 static void in_newline(struct parser_event * ret, const uint8_t c) {

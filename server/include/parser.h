@@ -6,9 +6,8 @@
 #include <stdbool.h>
 
 // per RFC 2449 (commands of length 255 must be supported)
-// TODO: ver la max cant de arguments
 #define MAX_COMMAND_LEN 4
-#define MAX_ARG_LEN     255 - MAX_COMMAND_LEN
+#define MAX_ARG_LEN     (255 - MAX_COMMAND_LEN)
 #define MAX_ARG_COUNT   2
 
 

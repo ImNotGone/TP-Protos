@@ -135,8 +135,8 @@ int user_manager_create_user(const char *username, const char *password) {
 
     // Checks that the maximum user amount has not been reached
     unsigned int max_users = monitor_get_max_users();
-    log(LOGGER_DEBUG, "Max users: %d", max_users);
-    log(LOGGER_DEBUG, "User count: %d", user_manager_user_count);
+    log(LOGGER_DEBUG, "Max users: %d", max_users)
+    log(LOGGER_DEBUG, "User count: %d", user_manager_user_count)
     if (user_manager_user_count >= max_users) {
         errno = EFBIG;
         return -1;
@@ -447,9 +447,7 @@ int user_manager_change_password(char* username, char* new_password){
     }
 
     strcpy(user->password, new_password);
-
-    //TODO: Make changes effective in the maildrop
-
+    
     return 0;
 }
 
@@ -613,9 +611,9 @@ static int load_users(FILE *users_file) {
 
         last_user = new_user;
 
-        log(LOGGER_DEBUG, "Loaded user %s", username);
+        log(LOGGER_DEBUG, "Loaded user %s", username)
         user_manager_user_count++;
-        log(LOGGER_DEBUG, "User count: %d", user_manager_user_count);
+        log(LOGGER_DEBUG, "User count: %d", user_manager_user_count)
     }
 
     last_user->next = NULL;

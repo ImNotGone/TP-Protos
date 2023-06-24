@@ -1,9 +1,7 @@
 #include "pop3.h"
-#include <assert.h>
 #include <commands.h>
 #include <errno.h>
 #include <logger.h>
-#include <message-manager.h>
 #include <responses.h>
 #include <states/states-common.h>
 #include <states/transaction.h>
@@ -12,7 +10,7 @@
 
 static states_t handle_stat(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4);
 static states_t handle_list(struct selector_key * key, char *message_number, int unused1, char *unused2, int unused3);
-static states_t handle_retr(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4);
+static states_t handle_retr(struct selector_key * key, char *message_number, int message_number_length, char *unused3, int unused4);
 static states_t handle_dele(struct selector_key * key, char *message_number, int unused1, char *unused2, int unused3);
 static states_t handle_noop(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4);
 static states_t handle_rset(struct selector_key * key, char *unused1, int unused2, char *unused3, int unused4);
@@ -54,7 +52,7 @@ static states_t handle_stat(struct selector_key * key, char *unused1, int unused
     bool error = message_manager_get_maildrop_info(client_data->message_manager, &message_count, &message_size) == -1;
 
     if (error) {
-        log(LOGGER_ERROR, "%s", "Error getting maildrop info: received unexpected null pointer");
+        log(LOGGER_ERROR, "%s", "Error getting maildrop info: received unexpected null pointer")
 
         client_data->response = RESPONSE_STAT_ERROR;
         states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
@@ -104,7 +102,7 @@ static states_t handle_list(struct selector_key * key, char *message_number, int
         }
 
         // Only happens if malloc fails
-        log(LOGGER_ERROR, "%s", "Error getting message data list: not enough memory");
+        log(LOGGER_ERROR, "%s", "Error getting message data list: not enough memory")
 
         client_data->response = RESPONSE_LIST_ERROR;
         states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
@@ -128,7 +126,7 @@ static states_t handle_list(struct selector_key * key, char *message_number, int
     char *response = malloc(response_length + 1);
 
     if (response == NULL) {
-        log(LOGGER_ERROR, "%s", "Error getting message data list: not enough memory");
+        log(LOGGER_ERROR, "%s", "Error getting message data list: not enough memory")
         client_data->response = RESPONSE_LIST_ERROR;
         states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
         return TRANSACTION;
@@ -231,7 +229,7 @@ static states_t handle_dele(struct selector_key * key, char *message_number, int
             client_data->response = RESPONSE_DELE_MSG_ALREADY_DELETED;
             break;
         default:
-            log(LOGGER_ERROR, "%s", "Error deleting message: unknown error");
+            log(LOGGER_ERROR, "%s", "Error deleting message: unknown error")
             client_data->response = RESPONSE_DELE_ERROR;
             break;
         }
@@ -272,7 +270,7 @@ static states_t handle_rset(struct selector_key * key, char *unused1, int unused
     bool error = message_manager_reset_deleted_flag(client_data->message_manager) == -1;
 
     if (error) {
-        log(LOGGER_ERROR, "%s", "Error resetting messages: message manager was null");
+        log(LOGGER_ERROR, "%s", "Error resetting messages: message manager was null")
 
         // RFC says to always return +OK
         // If this happens, something went really wrong anyways
@@ -324,10 +322,10 @@ static states_t handle_list_single_argument(struct selector_key * key, char *mes
             client_data->response = RESPONSE_LIST_NO_SUCH_MSG;
         } else if (errno == ENOMEM) {
             client_data->response = RESPONSE_LIST_ERROR;
-            log(LOGGER_ERROR, "%s", "Error getting message data: Unable to allocate memory for response");
+            log(LOGGER_ERROR, "%s", "Error getting message data: Unable to allocate memory for response")
         } else {
             client_data->response = RESPONSE_LIST_ERROR;
-            log(LOGGER_ERROR, "%s", "Error getting message data: Unknown error");
+            log(LOGGER_ERROR, "%s", "Error getting message data: Unknown error")
         }
 
         states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);

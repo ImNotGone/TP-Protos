@@ -3,7 +3,6 @@
 #include <errno.h>
 #include <monitor.h>
 #include <logger.h>
-#include <message-manager.h>
 #include <responses.h>
 #include <states/authorization.h>
 #include <states/states-common.h>
@@ -11,7 +10,7 @@
 #include <string.h>
 #include <user-manager.h>
 
-// no me dejaba castear, asi q estoy agregando argumentos para no me joda
+// no me dejaba castear, asi q estoy agregando argumentos para que no tire error
 /*
 * src/states/authorization.c:26:41: error: cast between incompatible function
 types from ‘states_t (*)(client_t *, char *, int)’ {aka ‘enum states (*)(struct
@@ -80,20 +79,20 @@ static states_t handle_pass(struct selector_key * key, char *pass, int unused1, 
 
             switch (errno) {
             case ENOMEM:
-                log(LOGGER_ERROR, "%s", "Error creating message manager: Insufficient memory.");
+                log(LOGGER_ERROR, "%s", "Error creating message manager: Insufficient memory.")
                 break;
             case ENOENT:
                 log(LOGGER_ERROR, "%s",
                     "Error creating message manager: Maildrop directory does not "
-                    "exist.");
+                    "exist.")
                 break;
             case ENOTDIR:
                 log(LOGGER_ERROR, "%s",
                     "Error creating message manager: Maildrop path is not a "
-                    "directory.");
+                    "directory.")
                 break;
             default:
-                log(LOGGER_ERROR, "%s", "Error creating message manager: Unknown error occurred.");
+                log(LOGGER_ERROR, "%s", "Error creating message manager: Unknown error occurred.")
                 break;
             }
 
@@ -107,10 +106,10 @@ static states_t handle_pass(struct selector_key * key, char *pass, int unused1, 
         if (monitor_add_log(client_data->user) == -1) {
             switch (errno) {
             case ENOMEM:
-                log(LOGGER_ERROR, "%s", "Error adding user log to monitor: Insufficient memory.");
+                log(LOGGER_ERROR, "%s", "Error adding user log to monitor: Insufficient memory.")
                 break;
             default:
-                log(LOGGER_ERROR, "%s", "Error adding user to monitor: Unknown error occurred.");
+                log(LOGGER_ERROR, "%s", "Error adding user to monitor: Unknown error occurred.")
                 break;
             }
 

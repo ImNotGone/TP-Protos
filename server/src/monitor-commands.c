@@ -19,10 +19,10 @@ static void handle_adduser(struct selector_key *key, char *arg1, int arg1_len, c
     client_data->response_index = 0;
     client_data->response_is_allocated = false;
 
-    log(LOGGER_DEBUG, "%s", "Handling adduser command");
+    log(LOGGER_DEBUG, "%s", "Handling adduser command")
 
     if (arg1_len == 0 || arg2_len == 0) {
-        log(LOGGER_ERROR, "%s", "Invalid arguments for adduser command");
+        log(LOGGER_ERROR, "%s", "Invalid arguments for adduser command")
 
         client_data->response = "ERR\r\n";
         write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
@@ -53,10 +53,10 @@ static void handle_deluser(struct selector_key *key, char *arg1, int arg1_len, c
     client_data->response_index = 0;
     client_data->response_is_allocated = false;
 
-    log(LOGGER_DEBUG, "%s", "Handling deluser command");
+    log(LOGGER_DEBUG, "%s", "Handling deluser command")
 
     if (arg1_len == 0) {
-        log(LOGGER_ERROR, "%s", "Invalid arguments for deluser command");
+        log(LOGGER_ERROR, "%s", "Invalid arguments for deluser command")
 
         client_data->response = "ERR\r\n";
         write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
@@ -84,10 +84,10 @@ static void handle_updatepass(struct selector_key *key, char *arg1, int arg1_len
     client_data->response_index = 0;
     client_data->response_is_allocated = false;
 
-    log(LOGGER_DEBUG, "%s", "Handling updatepass command");
+    log(LOGGER_DEBUG, "%s", "Handling updatepass command")
 
     if (arg1_len == 0 || arg2_len == 0) {
-        log(LOGGER_ERROR, "%s", "Invalid arguments for updatepass command");
+        log(LOGGER_ERROR, "%s", "Invalid arguments for updatepass command")
 
         client_data->response = "ERR\r\n";
         write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
@@ -119,10 +119,10 @@ static void handle_updatename(struct selector_key *key, char *arg1, int arg1_len
     client_data->response_index = 0;
     client_data->response_is_allocated = false;
 
-    log(LOGGER_DEBUG, "%s", "Handling updatename command");
+    log(LOGGER_DEBUG, "%s", "Handling updatename command")
 
     if (arg1_len == 0 || arg2_len == 0) {
-        log(LOGGER_ERROR, "%s", "Invalid arguments for updatename command");
+        log(LOGGER_ERROR, "%s", "Invalid arguments for updatename command")
 
         client_data->response = "ERR\r\n";
         write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
@@ -158,7 +158,7 @@ static void handle_listusers(struct selector_key *key, char *unused1, int unused
     log(LOGGER_DEBUG, "%s", "Handling listusers command");
 
     if (unused1 != NULL || unused2 != 0 || unused3 != NULL || unused4 != 0) {
-        log(LOGGER_ERROR, "%s", "Invalid arguments for listusers command");
+        log(LOGGER_ERROR, "%s", "Invalid arguments for listusers command")
 
         client_data->response = "ERR\r\n";
         write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
@@ -169,7 +169,7 @@ static void handle_listusers(struct selector_key *key, char *unused1, int unused
     char ** users = monitor_get_usernames();
 
     if (users == NULL) {
-        log(LOGGER_ERROR, "%s", "Error getting users");
+        log(LOGGER_ERROR, "%s", "Error getting users")
 
         client_data->response = "ERR\r\n";
         write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
@@ -189,7 +189,7 @@ static void handle_listusers(struct selector_key *key, char *unused1, int unused
     // Allocate response
     char *response = malloc(bytes_needed + strlen(ok) + strlen(dotcrlf) + 1);
     if (response == NULL) {
-        log(LOGGER_ERROR, "%s", "Error allocating memory for response");
+        log(LOGGER_ERROR, "%s", "Error allocating memory for response")
 
         free(users);
 
@@ -223,10 +223,10 @@ static void handle_metrics(struct selector_key *key, char *unused1, int unused2,
     client_data->response_index = 0;
     client_data->response_is_allocated = false;
 
-    log(LOGGER_DEBUG, "%s", "Handling metrics command");
+    log(LOGGER_DEBUG, "%s", "Handling metrics command")
 
     if (unused1 != NULL || unused2 != 0 || unused3 != NULL || unused4 != 0) {
-        log(LOGGER_ERROR, "%s", "Invalid arguments for metrics command");
+        log(LOGGER_ERROR, "%s", "Invalid arguments for metrics command")
 
         client_data->response = "ERR\r\n";
         write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
@@ -237,9 +237,9 @@ static void handle_metrics(struct selector_key *key, char *unused1, int unused2,
     ssize_t historical_connections = monitor_get_historical_connections();
     ssize_t bytes_transferred = monitor_get_bytes_transf();
 
-    log(LOGGER_DEBUG, "Current connections: %ld", current_connections);
-    log(LOGGER_DEBUG, "Historical connections: %ld", historical_connections);
-    log(LOGGER_DEBUG, "Bytes transferred: %ld", bytes_transferred);
+    log(LOGGER_DEBUG, "Current connections: %ld", current_connections)
+    log(LOGGER_DEBUG, "Historical connections: %ld", historical_connections)
+    log(LOGGER_DEBUG, "Bytes transferred: %ld", bytes_transferred)
 
     int current_connections_len = number_of_digits(current_connections);
     int historical_connections_len = number_of_digits(historical_connections);
@@ -253,7 +253,7 @@ static void handle_metrics(struct selector_key *key, char *unused1, int unused2,
 
     char *response = malloc(bytes_needed);
     if (response == NULL) {
-        log(LOGGER_ERROR, "%s", "Error allocating memory for response");
+        log(LOGGER_ERROR, "%s", "Error allocating memory for response")
 
         client_data->response = "ERR\r\n";
         write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
@@ -272,10 +272,10 @@ static void handle_logs(struct selector_key *key, char *unused1, int unused2, ch
     client_data->response_index = 0;
     client_data->response_is_allocated = false;
 
-    log(LOGGER_DEBUG, "%s", "Handling logs command");
+    log(LOGGER_DEBUG, "%s", "Handling logs command")
 
     if (unused1 != NULL || unused2 != 0 || unused3 != NULL || unused4 != 0) {
-        log(LOGGER_ERROR, "%s", "Invalid arguments for logs command");
+        log(LOGGER_ERROR, "%s", "Invalid arguments for logs command")
 
         client_data->response = "ERR\r\n";
         write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
@@ -285,7 +285,7 @@ static void handle_logs(struct selector_key *key, char *unused1, int unused2, ch
     char *logs = monitor_get_logs();
 
     if (logs == NULL) {
-        log(LOGGER_ERROR, "%s", "Error getting logs");
+        log(LOGGER_ERROR, "%s", "Error getting logs")
 
         client_data->response = "ERR\r\n";
         write_response_in_buffer(&client_data->buffer_out, client_data->response, &client_data->response_index);
@@ -295,7 +295,7 @@ static void handle_logs(struct selector_key *key, char *unused1, int unused2, ch
     char* response = malloc(strlen(logs) + strlen("OK\r\n.\r\n") + 1);
 
     if (response == NULL) {
-        log(LOGGER_ERROR, "%s", "Error allocating memory for response");
+        log(LOGGER_ERROR, "%s", "Error allocating memory for response")
 
         free(logs);
 
@@ -322,7 +322,7 @@ static int handle_setter(struct selector_key *key, char *arg1, int arg1_len, cha
     client_data->response_is_allocated = false;
 
     if (arg1 == NULL || arg1_len == 0 || unused1 != NULL || unused2 != 0) {
-        log(LOGGER_ERROR, "%s", "Invalid arguments for setter command");
+        log(LOGGER_ERROR, "%s", "Invalid arguments for setter command")
 
         client_data->response = "ERR\r\n";
         return -1;
@@ -331,7 +331,7 @@ static int handle_setter(struct selector_key *key, char *arg1, int arg1_len, cha
     int value = strtol(arg1, NULL, 10);
 
     if (value <= 0) {
-        log(LOGGER_ERROR, "%s", "Argument must be positive number");
+        log(LOGGER_ERROR, "%s", "Argument must be positive number")
 
         client_data->response = "ERR\r\n";
         return -1;
@@ -343,7 +343,7 @@ static int handle_setter(struct selector_key *key, char *arg1, int arg1_len, cha
 }
 
 static void handle_maxusers(struct selector_key *key, char *arg1, int arg1_len, char *unused1, int unused2) {
-    log(LOGGER_DEBUG, "%s", "Handling set max users command");
+    log(LOGGER_DEBUG, "%s", "Handling set max users command")
 
     monitor_client_t * client_data = (monitor_client_t *) key->data;
 
@@ -358,7 +358,7 @@ static void handle_maxusers(struct selector_key *key, char *arg1, int arg1_len, 
 }
 
 static void handle_maxconns(struct selector_key *key, char *arg1, int arg1_len, char *unused1, int unused2) {
-    log(LOGGER_DEBUG, "%s", "Handling set max connections command");
+    log(LOGGER_DEBUG, "%s", "Handling set max connections command")
 
     monitor_client_t * client_data = (monitor_client_t *) key->data;
 
@@ -374,7 +374,7 @@ static void handle_maxconns(struct selector_key *key, char *arg1, int arg1_len, 
 static void error_handler(struct selector_key *key, char *unused1, int unused2, char *unused3, int unused4) {
     monitor_client_t * client_data = (monitor_client_t *) key->data;
 
-    log(LOGGER_DEBUG, "%s", "Handling error command");
+    log(LOGGER_DEBUG, "%s", "Handling error command")
 
     client_data->response_index = 0;
     client_data->response = "ERR\r\n";
@@ -407,13 +407,13 @@ monitor_command_t *get_monitor_command(char * command) {
             return &monitor_commands[i];
         }
     }
-    log(LOGGER_DEBUG, "Unknown command: %s", command);
+    log(LOGGER_DEBUG, "Unknown command: %s", command)
 
     return &unknown_command;
 }
 
 void handle_unauthorized(struct selector_key *key) {
-    log(LOGGER_DEBUG, "%s", "Unauthorized access");
+    log(LOGGER_DEBUG, "%s", "Unauthorized access")
     error_handler(key, NULL, 0, NULL, 0);
 }
 

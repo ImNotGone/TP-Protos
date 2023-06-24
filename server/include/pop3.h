@@ -8,7 +8,7 @@
 #include <server.h>
 #include <state-machine.h>
 
-#define CLIENT_DATA(key) ((client_t *)(key->data))
+#define CLIENT_DATA(key) ((client_t *)((key)->data))
 
 typedef enum states {
     GREETING,

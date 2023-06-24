@@ -57,7 +57,6 @@ void monitor_server_accept(struct selector_key * key) {
     }
 
     log(LOGGER_INFO, "monitor client connection with sd:%d accepted", client_sd);
-    return;
 }
 
 static void monitor_client_close_connection(struct selector_key * key) {
@@ -69,7 +68,6 @@ static void monitor_client_close_connection(struct selector_key * key) {
 
     client_data->closed = true;
 
-    // TODO: metric decrement client count
     log(LOGGER_INFO, "monitor client connection with sd:%d disconnected", client_data->client_sd);
 
     if(client_data->response_is_allocated) {

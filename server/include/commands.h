@@ -12,6 +12,6 @@ struct command {
     command_handler command_handler;
 };
 
-command_t * get_command(client_t * client_data, struct parser_event * parser_event, command_t * commands, int cant_commands);
+command_t * get_command(struct parser_event * parser_event, command_t * commands, int cant_commands);
 
 #endif

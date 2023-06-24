@@ -14,7 +14,6 @@
 
 #define RESPONSE_GREETING       OK_HEADER" POP3 SERVER READY"CRLF
 
-// TODO: fill
 // AUTH COMMANDS RESPONSES
 // Mando OK igual en error y success
 #define RESPONSE_USER                      RESPONSE_OK_PLAIN

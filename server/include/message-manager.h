@@ -3,8 +3,6 @@
 
 #include <stdio.h>
 
-#define MESSAGE_SUCCESS 0
-
 typedef struct message_data_t {
     int message_number;
     int message_size;

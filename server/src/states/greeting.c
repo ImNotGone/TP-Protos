@@ -13,8 +13,6 @@ void greeting_on_arrival(unsigned state, struct selector_key * key) {
     client_data->response_index = 0;
     client_data->response = RESPONSE_GREETING;
     states_common_response_write(&client_data->buffer_out, client_data->response, &client_data->response_index);
-
-    return;
 }
 
 states_t greeting_write(struct selector_key * key) {

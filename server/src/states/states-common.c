@@ -197,7 +197,7 @@ command_t * states_common_buffer_find_command(struct selector_key * key, char * 
             return &unknown_command;
         }
 
-        command = get_command(client_data, (*parser_event), commands, cant_commands);
+        command = get_command((*parser_event), commands, cant_commands);
 
         // Si no encontre el comando pongo la response de unknown_command
         if(command == NULL) {

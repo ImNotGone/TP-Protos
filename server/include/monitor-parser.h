@@ -10,7 +10,6 @@
 #define TWO_ARGS (TOKEN_AND_CMD + 2)
 
 #define MAX_ARGS 2
-#define MAX_CMD_LENGTH 40
 
 // 1 auth_token + 1 command + args
 #define MAX_WORDS (2 + MAX_ARGS)

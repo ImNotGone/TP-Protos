@@ -1,14 +1,13 @@
 #include <monitor-parser.h>
 #include <logger.h>
 #include <string.h>
-#include <ctype.h>
 #include "monitor-commands.h"
 
 #define AUTHORIZATION_TOKEN "password_secreta"
 
 int parse_client_request(struct selector_key *key) {
 
-    log(LOGGER_DEBUG, "%s", "parsing client request");
+    log(LOGGER_DEBUG, "%s", "parsing client request")
 
     if(key == NULL)
         return -1;
@@ -35,7 +34,7 @@ int parse_client_request(struct selector_key *key) {
 
     char *token;
     while ((token = strtok_r(save_ptr, " ", &save_ptr)) != NULL) {
-        log(LOGGER_DEBUG, "token: %s", token);
+        log(LOGGER_DEBUG, "token: %s", token)
         if (index >= MAX_WORDS) {
             return -1;
         }
